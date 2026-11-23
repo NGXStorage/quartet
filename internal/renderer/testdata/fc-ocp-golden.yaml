@@ -1,0 +1,2205 @@
+# ------------------------------------------------------------------------------
+# GOLDEN SOURCE: this fixture is a FIELD-LEVEL MIRROR of
+# the upstream FC raw render -- NOT byte-identical to it. Approved transforms
+# applied to the raw before comparison:
+# StorageClass/VolumeSnapshotClass dropped (renderer never creates)
+# driver env names canonicalized to the helm set: POOL_NAME ->
+# STORAGE_POOL_NAME, API_KEY -> STORAGE_API_KEY (args $(...) refs and
+# secretKeyRef names follow); secret name fc-csi-ngxstorage-secret ->
+# fc-csi-ngxstorage-config (= the spec secretRef name parity test feeds)
+# controller placement canonicalized to the ADOPTED free-placement
+# default (the adopted default): the raw worker-pin is stripped from the
+# controller Deployment ONLY (os=linux + tolerations retained); the
+# node DS worker-pin stays (canonical for all three drivers).
+# FC's live scheduling acceptance remains a separate live gate.
+# --log=info stays UNQUOTED (raw already is; renderer writes spec.logLevel raw)
+# driver digest -> parity reference (see fcGoldenDriverImage);
+# sidecars stay renderer constants (digests identical across profiles)
+# Everything else is SOURCE-BOUND raw adoption, including the recorded
+# raw-vs-helm divergences (rawhelm diff, pinned Helm @ f9e3b35b): fsGroupPolicy
+# File (fsGroupPolicy File open), node DS worker-pin on BOTH platforms (canonical),
+# CSI_ENDPOINT env + raw arg order, --health-port livenessprobe flags,
+# controller driver containerPort 9808 (no probe) vs node driver
+# livenessProbe :9811, raw /registration driver mount, projected serviceaccount
+# token volume (kube-api-access-ngxstorage) mounted only on the node driver
+# container, IfNotPresent pull policy everywhere, kustomize SCC namespace
+# artifact, capabilities order [SYS_ADMIN, SYS_CHROOT].
+# Raw version: ContainerStorage/CSI/Driver/FC @ 7a8454afa04e10905181d2d24e37813680be92b8
+# (branch master, 2026-11-09), deploy/manifest/{kubernetes,openshift},
+# pinned via checkout-external `git archive` (user-dirty tests/ tree excluded),
+# rendered with kustomize v5.7.1. 150 docs -> 148 after the SC/VSC drop.
+# Helm reference (semantic diff only, NOT mirrored): Integrations/Helm @
+# f9e3b35b325c3615a91b1cfa05569b4e46f07e8a (2026-11-03), helm v3.21.3,
+# Helm/fc/{kubernetes,openshift} -- 17-item divergence table re-verified at
+# the pinned commit (earlier manifest notes supersede nothing here).
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - fc-csi-ngxstorage-operation-lock-000
+  - fc-csi-ngxstorage-operation-lock-001
+  - fc-csi-ngxstorage-operation-lock-002
+  - fc-csi-ngxstorage-operation-lock-003
+  - fc-csi-ngxstorage-operation-lock-004
+  - fc-csi-ngxstorage-operation-lock-005
+  - fc-csi-ngxstorage-operation-lock-006
+  - fc-csi-ngxstorage-operation-lock-007
+  - fc-csi-ngxstorage-operation-lock-008
+  - fc-csi-ngxstorage-operation-lock-009
+  - fc-csi-ngxstorage-operation-lock-010
+  - fc-csi-ngxstorage-operation-lock-011
+  - fc-csi-ngxstorage-operation-lock-012
+  - fc-csi-ngxstorage-operation-lock-013
+  - fc-csi-ngxstorage-operation-lock-014
+  - fc-csi-ngxstorage-operation-lock-015
+  - fc-csi-ngxstorage-operation-lock-016
+  - fc-csi-ngxstorage-operation-lock-017
+  - fc-csi-ngxstorage-operation-lock-018
+  - fc-csi-ngxstorage-operation-lock-019
+  - fc-csi-ngxstorage-operation-lock-020
+  - fc-csi-ngxstorage-operation-lock-021
+  - fc-csi-ngxstorage-operation-lock-022
+  - fc-csi-ngxstorage-operation-lock-023
+  - fc-csi-ngxstorage-operation-lock-024
+  - fc-csi-ngxstorage-operation-lock-025
+  - fc-csi-ngxstorage-operation-lock-026
+  - fc-csi-ngxstorage-operation-lock-027
+  - fc-csi-ngxstorage-operation-lock-028
+  - fc-csi-ngxstorage-operation-lock-029
+  - fc-csi-ngxstorage-operation-lock-030
+  - fc-csi-ngxstorage-operation-lock-031
+  - fc-csi-ngxstorage-operation-lock-032
+  - fc-csi-ngxstorage-operation-lock-033
+  - fc-csi-ngxstorage-operation-lock-034
+  - fc-csi-ngxstorage-operation-lock-035
+  - fc-csi-ngxstorage-operation-lock-036
+  - fc-csi-ngxstorage-operation-lock-037
+  - fc-csi-ngxstorage-operation-lock-038
+  - fc-csi-ngxstorage-operation-lock-039
+  - fc-csi-ngxstorage-operation-lock-040
+  - fc-csi-ngxstorage-operation-lock-041
+  - fc-csi-ngxstorage-operation-lock-042
+  - fc-csi-ngxstorage-operation-lock-043
+  - fc-csi-ngxstorage-operation-lock-044
+  - fc-csi-ngxstorage-operation-lock-045
+  - fc-csi-ngxstorage-operation-lock-046
+  - fc-csi-ngxstorage-operation-lock-047
+  - fc-csi-ngxstorage-operation-lock-048
+  - fc-csi-ngxstorage-operation-lock-049
+  - fc-csi-ngxstorage-operation-lock-050
+  - fc-csi-ngxstorage-operation-lock-051
+  - fc-csi-ngxstorage-operation-lock-052
+  - fc-csi-ngxstorage-operation-lock-053
+  - fc-csi-ngxstorage-operation-lock-054
+  - fc-csi-ngxstorage-operation-lock-055
+  - fc-csi-ngxstorage-operation-lock-056
+  - fc-csi-ngxstorage-operation-lock-057
+  - fc-csi-ngxstorage-operation-lock-058
+  - fc-csi-ngxstorage-operation-lock-059
+  - fc-csi-ngxstorage-operation-lock-060
+  - fc-csi-ngxstorage-operation-lock-061
+  - fc-csi-ngxstorage-operation-lock-062
+  - fc-csi-ngxstorage-operation-lock-063
+  - fc-csi-ngxstorage-operation-lock-064
+  - fc-csi-ngxstorage-operation-lock-065
+  - fc-csi-ngxstorage-operation-lock-066
+  - fc-csi-ngxstorage-operation-lock-067
+  - fc-csi-ngxstorage-operation-lock-068
+  - fc-csi-ngxstorage-operation-lock-069
+  - fc-csi-ngxstorage-operation-lock-070
+  - fc-csi-ngxstorage-operation-lock-071
+  - fc-csi-ngxstorage-operation-lock-072
+  - fc-csi-ngxstorage-operation-lock-073
+  - fc-csi-ngxstorage-operation-lock-074
+  - fc-csi-ngxstorage-operation-lock-075
+  - fc-csi-ngxstorage-operation-lock-076
+  - fc-csi-ngxstorage-operation-lock-077
+  - fc-csi-ngxstorage-operation-lock-078
+  - fc-csi-ngxstorage-operation-lock-079
+  - fc-csi-ngxstorage-operation-lock-080
+  - fc-csi-ngxstorage-operation-lock-081
+  - fc-csi-ngxstorage-operation-lock-082
+  - fc-csi-ngxstorage-operation-lock-083
+  - fc-csi-ngxstorage-operation-lock-084
+  - fc-csi-ngxstorage-operation-lock-085
+  - fc-csi-ngxstorage-operation-lock-086
+  - fc-csi-ngxstorage-operation-lock-087
+  - fc-csi-ngxstorage-operation-lock-088
+  - fc-csi-ngxstorage-operation-lock-089
+  - fc-csi-ngxstorage-operation-lock-090
+  - fc-csi-ngxstorage-operation-lock-091
+  - fc-csi-ngxstorage-operation-lock-092
+  - fc-csi-ngxstorage-operation-lock-093
+  - fc-csi-ngxstorage-operation-lock-094
+  - fc-csi-ngxstorage-operation-lock-095
+  - fc-csi-ngxstorage-operation-lock-096
+  - fc-csi-ngxstorage-operation-lock-097
+  - fc-csi-ngxstorage-operation-lock-098
+  - fc-csi-ngxstorage-operation-lock-099
+  - fc-csi-ngxstorage-operation-lock-100
+  - fc-csi-ngxstorage-operation-lock-101
+  - fc-csi-ngxstorage-operation-lock-102
+  - fc-csi-ngxstorage-operation-lock-103
+  - fc-csi-ngxstorage-operation-lock-104
+  - fc-csi-ngxstorage-operation-lock-105
+  - fc-csi-ngxstorage-operation-lock-106
+  - fc-csi-ngxstorage-operation-lock-107
+  - fc-csi-ngxstorage-operation-lock-108
+  - fc-csi-ngxstorage-operation-lock-109
+  - fc-csi-ngxstorage-operation-lock-110
+  - fc-csi-ngxstorage-operation-lock-111
+  - fc-csi-ngxstorage-operation-lock-112
+  - fc-csi-ngxstorage-operation-lock-113
+  - fc-csi-ngxstorage-operation-lock-114
+  - fc-csi-ngxstorage-operation-lock-115
+  - fc-csi-ngxstorage-operation-lock-116
+  - fc-csi-ngxstorage-operation-lock-117
+  - fc-csi-ngxstorage-operation-lock-118
+  - fc-csi-ngxstorage-operation-lock-119
+  - fc-csi-ngxstorage-operation-lock-120
+  - fc-csi-ngxstorage-operation-lock-121
+  - fc-csi-ngxstorage-operation-lock-122
+  - fc-csi-ngxstorage-operation-lock-123
+  - fc-csi-ngxstorage-operation-lock-124
+  - fc-csi-ngxstorage-operation-lock-125
+  - fc-csi-ngxstorage-operation-lock-126
+  - fc-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-leader-election
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - fc-csi-ngxstorage-operation-lock-000
+  - fc-csi-ngxstorage-operation-lock-001
+  - fc-csi-ngxstorage-operation-lock-002
+  - fc-csi-ngxstorage-operation-lock-003
+  - fc-csi-ngxstorage-operation-lock-004
+  - fc-csi-ngxstorage-operation-lock-005
+  - fc-csi-ngxstorage-operation-lock-006
+  - fc-csi-ngxstorage-operation-lock-007
+  - fc-csi-ngxstorage-operation-lock-008
+  - fc-csi-ngxstorage-operation-lock-009
+  - fc-csi-ngxstorage-operation-lock-010
+  - fc-csi-ngxstorage-operation-lock-011
+  - fc-csi-ngxstorage-operation-lock-012
+  - fc-csi-ngxstorage-operation-lock-013
+  - fc-csi-ngxstorage-operation-lock-014
+  - fc-csi-ngxstorage-operation-lock-015
+  - fc-csi-ngxstorage-operation-lock-016
+  - fc-csi-ngxstorage-operation-lock-017
+  - fc-csi-ngxstorage-operation-lock-018
+  - fc-csi-ngxstorage-operation-lock-019
+  - fc-csi-ngxstorage-operation-lock-020
+  - fc-csi-ngxstorage-operation-lock-021
+  - fc-csi-ngxstorage-operation-lock-022
+  - fc-csi-ngxstorage-operation-lock-023
+  - fc-csi-ngxstorage-operation-lock-024
+  - fc-csi-ngxstorage-operation-lock-025
+  - fc-csi-ngxstorage-operation-lock-026
+  - fc-csi-ngxstorage-operation-lock-027
+  - fc-csi-ngxstorage-operation-lock-028
+  - fc-csi-ngxstorage-operation-lock-029
+  - fc-csi-ngxstorage-operation-lock-030
+  - fc-csi-ngxstorage-operation-lock-031
+  - fc-csi-ngxstorage-operation-lock-032
+  - fc-csi-ngxstorage-operation-lock-033
+  - fc-csi-ngxstorage-operation-lock-034
+  - fc-csi-ngxstorage-operation-lock-035
+  - fc-csi-ngxstorage-operation-lock-036
+  - fc-csi-ngxstorage-operation-lock-037
+  - fc-csi-ngxstorage-operation-lock-038
+  - fc-csi-ngxstorage-operation-lock-039
+  - fc-csi-ngxstorage-operation-lock-040
+  - fc-csi-ngxstorage-operation-lock-041
+  - fc-csi-ngxstorage-operation-lock-042
+  - fc-csi-ngxstorage-operation-lock-043
+  - fc-csi-ngxstorage-operation-lock-044
+  - fc-csi-ngxstorage-operation-lock-045
+  - fc-csi-ngxstorage-operation-lock-046
+  - fc-csi-ngxstorage-operation-lock-047
+  - fc-csi-ngxstorage-operation-lock-048
+  - fc-csi-ngxstorage-operation-lock-049
+  - fc-csi-ngxstorage-operation-lock-050
+  - fc-csi-ngxstorage-operation-lock-051
+  - fc-csi-ngxstorage-operation-lock-052
+  - fc-csi-ngxstorage-operation-lock-053
+  - fc-csi-ngxstorage-operation-lock-054
+  - fc-csi-ngxstorage-operation-lock-055
+  - fc-csi-ngxstorage-operation-lock-056
+  - fc-csi-ngxstorage-operation-lock-057
+  - fc-csi-ngxstorage-operation-lock-058
+  - fc-csi-ngxstorage-operation-lock-059
+  - fc-csi-ngxstorage-operation-lock-060
+  - fc-csi-ngxstorage-operation-lock-061
+  - fc-csi-ngxstorage-operation-lock-062
+  - fc-csi-ngxstorage-operation-lock-063
+  - fc-csi-ngxstorage-operation-lock-064
+  - fc-csi-ngxstorage-operation-lock-065
+  - fc-csi-ngxstorage-operation-lock-066
+  - fc-csi-ngxstorage-operation-lock-067
+  - fc-csi-ngxstorage-operation-lock-068
+  - fc-csi-ngxstorage-operation-lock-069
+  - fc-csi-ngxstorage-operation-lock-070
+  - fc-csi-ngxstorage-operation-lock-071
+  - fc-csi-ngxstorage-operation-lock-072
+  - fc-csi-ngxstorage-operation-lock-073
+  - fc-csi-ngxstorage-operation-lock-074
+  - fc-csi-ngxstorage-operation-lock-075
+  - fc-csi-ngxstorage-operation-lock-076
+  - fc-csi-ngxstorage-operation-lock-077
+  - fc-csi-ngxstorage-operation-lock-078
+  - fc-csi-ngxstorage-operation-lock-079
+  - fc-csi-ngxstorage-operation-lock-080
+  - fc-csi-ngxstorage-operation-lock-081
+  - fc-csi-ngxstorage-operation-lock-082
+  - fc-csi-ngxstorage-operation-lock-083
+  - fc-csi-ngxstorage-operation-lock-084
+  - fc-csi-ngxstorage-operation-lock-085
+  - fc-csi-ngxstorage-operation-lock-086
+  - fc-csi-ngxstorage-operation-lock-087
+  - fc-csi-ngxstorage-operation-lock-088
+  - fc-csi-ngxstorage-operation-lock-089
+  - fc-csi-ngxstorage-operation-lock-090
+  - fc-csi-ngxstorage-operation-lock-091
+  - fc-csi-ngxstorage-operation-lock-092
+  - fc-csi-ngxstorage-operation-lock-093
+  - fc-csi-ngxstorage-operation-lock-094
+  - fc-csi-ngxstorage-operation-lock-095
+  - fc-csi-ngxstorage-operation-lock-096
+  - fc-csi-ngxstorage-operation-lock-097
+  - fc-csi-ngxstorage-operation-lock-098
+  - fc-csi-ngxstorage-operation-lock-099
+  - fc-csi-ngxstorage-operation-lock-100
+  - fc-csi-ngxstorage-operation-lock-101
+  - fc-csi-ngxstorage-operation-lock-102
+  - fc-csi-ngxstorage-operation-lock-103
+  - fc-csi-ngxstorage-operation-lock-104
+  - fc-csi-ngxstorage-operation-lock-105
+  - fc-csi-ngxstorage-operation-lock-106
+  - fc-csi-ngxstorage-operation-lock-107
+  - fc-csi-ngxstorage-operation-lock-108
+  - fc-csi-ngxstorage-operation-lock-109
+  - fc-csi-ngxstorage-operation-lock-110
+  - fc-csi-ngxstorage-operation-lock-111
+  - fc-csi-ngxstorage-operation-lock-112
+  - fc-csi-ngxstorage-operation-lock-113
+  - fc-csi-ngxstorage-operation-lock-114
+  - fc-csi-ngxstorage-operation-lock-115
+  - fc-csi-ngxstorage-operation-lock-116
+  - fc-csi-ngxstorage-operation-lock-117
+  - fc-csi-ngxstorage-operation-lock-118
+  - fc-csi-ngxstorage-operation-lock-119
+  - fc-csi-ngxstorage-operation-lock-120
+  - fc-csi-ngxstorage-operation-lock-121
+  - fc-csi-ngxstorage-operation-lock-122
+  - fc-csi-ngxstorage-operation-lock-123
+  - fc-csi-ngxstorage-operation-lock-124
+  - fc-csi-ngxstorage-operation-lock-125
+  - fc-csi-ngxstorage-operation-lock-126
+  - fc-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - fc-csi-ngxstorage-node-scc
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fc-csi-ngxstorage-controller
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - csinodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments/status
+  verbs:
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotclasses
+  - volumesnapshots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents/status
+  verbs:
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-controller-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-leader-election
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-leader-election
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-holder-pod-read
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-scc-use
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fc-csi-ngxstorage-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fc-csi-ngxstorage-controller
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: v1
+data:
+  lease-prefix: fc-csi-ngxstorage
+  shard-count: '128'
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: coordination-config
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-coordination-config
+  namespace: ngxstorage-fc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: controller-health
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-controller-health
+  namespace: ngxstorage-fc
+spec:
+  ports:
+  - name: healthz
+    port: 9808
+    targetPort: 9808
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: fc-csi-ngxstorage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/name: fc-csi-ngxstorage
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: fc-csi-ngxstorage
+    spec:
+      containers:
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-provisioner@sha256:a4b0b1a37605b7b04a293e136edf7006ec1786a8eb3f4e5a945f81d667dcc371
+        imagePullPolicy: IfNotPresent
+        name: external-provisioner
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-attacher@sha256:b9dc9a714a484ccdeeb6f86d88d4db9b7a5ecfc5a55da6db3a60bb3fa33c278a
+        imagePullPolicy: IfNotPresent
+        name: external-attacher
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-resizer@sha256:ea1d25e23479000c7e8eeb92d827df66258df4e482ca054c5e7ce3fc0f5c41a5
+        imagePullPolicy: IfNotPresent
+        name: external-resizer
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-snapshotter@sha256:42af0929bcd60a43499825c078a60ff0534e08af8fbeb283aa391be40feb9f3e
+        imagePullPolicy: IfNotPresent
+        name: external-snapshotter
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9808
+        image: quay.io/ngxstorage/csi-sidecars/livenessprobe@sha256:06da0d5b8908072f2e4522692aee8dc119fba7247a9658497e1153992cd777e9
+        imagePullPolicy: IfNotPresent
+        name: liveness-probe
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --role=controller
+        - --endpoint=$(CSI_ENDPOINT)
+        - --ip=$(STORAGE_IPS)
+        - --pool-name=$(STORAGE_POOL_NAME)
+        - --fc-target-names=$(FC_TARGET_NAMES)
+        - --api-key=$(STORAGE_API_KEY)
+        - --log=info
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///csi/csi.sock
+        - name: NGX_COORDINATION_LEASE_PREFIX
+          value: fc-csi-ngxstorage
+        - name: NGX_COORDINATION_SHARD_COUNT
+          value: '128'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: STORAGE_IPS
+          valueFrom:
+            secretKeyRef:
+              key: storage-ips
+              name: fc-csi-ngxstorage-config
+        - name: STORAGE_POOL_NAME
+          valueFrom:
+            secretKeyRef:
+              key: pool-name
+              name: fc-csi-ngxstorage-config
+        - name: FC_TARGET_NAMES
+          valueFrom:
+            secretKeyRef:
+              key: fc-target-names
+              name: fc-csi-ngxstorage-config
+        - name: STORAGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: fc-csi-ngxstorage-config
+        image: quay.io/ngxstorage/fc-csi-ngxstorage@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        imagePullPolicy: IfNotPresent
+        name: fc-csi-ngxstorage
+        ports:
+        - containerPort: 9808
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      serviceAccountName: fc-csi-ngxstorage-controller
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - key: CriticalAddonsOnly
+        operator: Exists
+      volumes:
+      - emptyDir: {}
+        name: socket-dir
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: node
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: node
+      app.kubernetes.io/name: fc-csi-ngxstorage
+  template:
+    metadata:
+      annotations:
+        openshift.io/required-scc: fc-csi-ngxstorage-node-scc
+      labels:
+        app.kubernetes.io/component: node
+        app.kubernetes.io/name: fc-csi-ngxstorage
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/fc.csi.ngxstorage.com/csi.sock
+        - --v=2
+        image: quay.io/ngxstorage/csi-sidecars/csi-node-driver-registrar@sha256:f9de845b170155199f2a2a3f9531cf13d78e31235e9db6b6582a8b0db0a50dad
+        imagePullPolicy: IfNotPresent
+        name: node-driver-registrar
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9811
+        image: quay.io/ngxstorage/csi-sidecars/livenessprobe@sha256:06da0d5b8908072f2e4522692aee8dc119fba7247a9658497e1153992cd777e9
+        imagePullPolicy: IfNotPresent
+        name: liveness-probe
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --role=node
+        - --endpoint=$(CSI_ENDPOINT)
+        - --ip=$(STORAGE_IPS)
+        - --pool-name=$(STORAGE_POOL_NAME)
+        - --fc-target-names=$(FC_TARGET_NAMES)
+        - --api-key=$(STORAGE_API_KEY)
+        - --nodeid=$(KUBE_NODE_NAME)
+        - --log=info
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///csi/csi.sock
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NGX_COORDINATION_LEASE_PREFIX
+          value: fc-csi-ngxstorage
+        - name: NGX_COORDINATION_SHARD_COUNT
+          value: '128'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: STORAGE_IPS
+          valueFrom:
+            secretKeyRef:
+              key: storage-ips
+              name: fc-csi-ngxstorage-config
+        - name: STORAGE_POOL_NAME
+          valueFrom:
+            secretKeyRef:
+              key: pool-name
+              name: fc-csi-ngxstorage-config
+        - name: FC_TARGET_NAMES
+          valueFrom:
+            secretKeyRef:
+              key: fc-target-names
+              name: fc-csi-ngxstorage-config
+        - name: STORAGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: fc-csi-ngxstorage-config
+        - name: NGXSTORAGE_CSI_LOG_DIR
+          value: /host/var/log/ngxstorage/fc
+        image: quay.io/ngxstorage/fc-csi-ngxstorage@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: 9811
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        name: fc-csi-ngxstorage
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - SYS_CHROOT
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+        - mountPath: /registration
+          name: registration-dir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-ngxstorage
+          readOnly: true
+        - mountPath: /var/lib/kubelet
+          mountPropagation: Bidirectional
+          name: kubelet-dir
+        - mountPath: /host
+          mountPropagation: Bidirectional
+          name: host-root
+        - mountPath: /dev
+          name: host-dev
+      hostIPC: true
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+        node-role.kubernetes.io/worker: ''
+      priorityClassName: system-node-critical
+      serviceAccountName: fc-csi-ngxstorage-node
+      tolerations:
+      - operator: Exists
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins/fc.csi.ngxstorage.com
+          type: DirectoryOrCreate
+        name: socket-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: Directory
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+        name: kubelet-dir
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+      - hostPath:
+          path: /dev
+          type: Directory
+        name: host-dev
+      - name: kube-api-access-ngxstorage
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3600
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-000
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-001
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-002
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-003
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-004
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-005
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-006
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-007
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-008
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-009
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-010
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-011
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-012
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-013
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-014
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-015
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-016
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-017
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-018
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-019
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-020
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-021
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-022
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-023
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-024
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-025
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-026
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-027
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-028
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-029
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-030
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-031
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-032
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-033
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-034
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-035
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-036
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-037
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-038
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-039
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-040
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-041
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-042
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-043
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-044
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-045
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-046
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-047
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-048
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-049
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-050
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-051
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-052
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-053
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-054
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-055
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-056
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-057
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-058
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-059
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-060
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-061
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-062
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-063
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-064
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-065
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-066
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-067
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-068
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-069
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-070
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-071
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-072
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-073
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-074
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-075
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-076
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-077
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-078
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-079
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-080
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-081
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-082
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-083
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-084
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-085
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-086
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-087
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-088
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-089
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-090
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-091
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-092
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-093
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-094
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-095
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-096
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-097
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-098
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-099
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-100
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-101
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-102
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-103
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-104
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-105
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-106
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-107
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-108
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-109
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-110
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-111
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-112
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-113
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-114
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-115
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-116
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-117
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-118
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-119
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-120
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-121
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-122
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-123
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-124
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-125
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-126
+  namespace: ngxstorage-fc
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: fc-csi-ngxstorage
+  name: fc-csi-ngxstorage-operation-lock-127
+  namespace: ngxstorage-fc
+---
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- SYS_ADMIN
+- SYS_CHROOT
+apiVersion: security.openshift.io/v1
+fsGroup:
+  type: RunAsAny
+groups: []
+kind: SecurityContextConstraints
+metadata:
+  name: fc-csi-ngxstorage-node-scc
+  namespace: ngxstorage-fc
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- hostPath
+- downwardAPI
+- projected
+- emptyDir
+---
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: fc.csi.ngxstorage.com
+spec:
+  attachRequired: true
+  fsGroupPolicy: File
+  podInfoOnMount: false
+  volumeLifecycleModes:
+  - Persistent
+---

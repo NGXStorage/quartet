@@ -1,0 +1,14 @@
+# OpenShift operand install entrypoint (explicit namespace contract). Apply with
+# `make install-operands PLATFORM=ocp` or `kubectl apply -k config/operands/nfs/ocp`.
+# Deterministic order (kustomize renders resources in listed order and
+# kubectl applies the render sequentially): namespace → RBAC (the ocp
+# superset adds the node SCC use grant). The manager (config/default) is
+# applied as a separate step.
+#
+# Files here are GENERATED (hack/generate-install-rbac); do not hand-edit.
+# kustomize v5's locality constraint forbids referencing files outside this
+# directory, so the overlay carries its own copies (parity-pinned against
+# the renderer).
+resources:
+- namespace.yaml
+- rbac-ocp.yaml

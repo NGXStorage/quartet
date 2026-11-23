@@ -1,0 +1,25 @@
+# Profile-selected install entrypoint — KUBERNETES, NFS (PROFILE=nfs).
+#
+# config/default is the profile-neutral base (no operand set).
+# This composition is the single platform-complete artifact for a SELECTED
+# NFS install: same parents as config/default, but the operand install set
+# comes from ../operands/nfs/k8s (namespace ngxstorage-nfs first, RBAC after).
+# The selection is explicit — an nfs-selected artifact carries NO fc/iscsi
+# objects and vice versa; a multi-profile install applies the sets per
+# profile (make install-operands PROFILE=... / install-artifacts.sh with
+# QUARTET_INSTALL_PROFILE=...). Pinned by
+# hack/rendertest (config-render parity) and
+# tests/install-artifacts-test.sh (per-profile composition).
+#
+# go run sigs.k8s.io/kustomize/kustomize/v5@v5.7.1 build config/default-nfs
+#
+# The manager namespace lives here as its own copy (kustomize v5 locality
+# forbids referencing a FILE outside this directory; config/default keeps
+# its own copy). All copies must stay byte-identical — checked by
+# rendertest (config-render parity).
+resources:
+- namespace.yaml
+- ../crd
+- ../rbac
+- ../manager
+- ../operands/nfs/k8s

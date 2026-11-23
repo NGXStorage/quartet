@@ -1,0 +1,11 @@
+{
+  "name": "dependency-recovery",
+  "platform": "kubernetes",
+  "profile": "nfs",
+  "risk": "cluster-scoped-fault",
+  "scope": "cluster-scoped",
+  "precondition": "Operator installed (CRD + manager) and the installer-provisioned operand RBAC set config/operands/nfs/ already applied out-of-band (the reconciler only verifies it, apply.go:221-244); a dedicated TEST_NAMESPACE exists or is creatable; no singleton Quartet CR present. A namespace is NOT cluster-scoped isolation: the nfs operand set is canonical (ngxstorage-nfs, operand namespace) and includes cluster-scoped kinds (CSIDriver, ClusterRole/Binding), which is why scope=cluster-scoped. EFFECT (risk is classified by effect, not by declaration): this case creates and deletes the canonical singleton Quartet CR plus operand resources (backend Secret in ngxstorage-nfs, TEST_NAMESPACE), so it is cluster-scoped-fault — never selectable by `all`/`allow-isolated`.",
+  "restore": "Delete the case-created backend Secret in ngxstorage-nfs and the case Quartet CR (finalizer cleanup removes owned operands; the operator NEVER deletes namespaces, namespace ownership — the namespace itself is left in place), then delete TEST_NAMESPACE. Installer-owned RBAC is never touched by the case.",
+  "plan_ref": "offline scenario contract — dependency-recovery",
+  "notes": "dependency-recovery fault NFS-applicable cell. Backend Secret/key absence surfaces as WorkloadNotReady with the kubelet waiting reason AS-IS (Secret API untouched: the operator never reads Secrets; MissingSecret/MissingSecretKey is unproven and must not appear — validation.go:45-50, apply.go:416-420); retryable 30s requeue (quartet_controller.go:45,172-179); auto-heal on pod watch once the Secret exists (apply.go:433). The snapshot-controller-absence cell rides the same probe (snapshotter sidecar ImagePullBackOff -> WorkloadNotReady/ImagePullFailed, apply.go:421-423, renderer/nfs.go:595-600) and is exercised by the offline contract because it cannot be forced portably via the API."
+}

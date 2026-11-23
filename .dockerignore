@@ -1,0 +1,7 @@
+# provenance: the image builds from committed sources alone. Host artifacts must not
+# leak into the build context — bin/manager is built INSIDE the image (the
+# build stage), not copied from the host.
+.git/
+.opencode/
+bin/
+docs/legacy/

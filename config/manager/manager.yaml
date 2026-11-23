@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quartet-manager
+ # explicit placement: explicit quartet-system placement (see config/rbac/service_account.yaml
+ # for why not a kustomize namespace transformer).
+  namespace: quartet-system
+  labels:
+    control-plane: quartet-manager
+spec:
+ # leader election: replica=1 + mandatory lease leader election.
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: quartet-manager
+  template:
+    metadata:
+      labels:
+        control-plane: quartet-manager
+    spec:
+      serviceAccountName: quartet-manager
+      securityContext:
+ # Arbitrary-UID strategy: NO fixed runAsUser/fsGroup here. The image
+ # carries a non-root USER (Dockerfile `USER 65532`), which vanilla
+ # Kubernetes uses as-is and which OpenShift `arbitraryuid`/`nonroot`
+ # SCCs accept. A pinned runAsUser: 65532 would collide with range-based
+ # SCCs instead (restricted-v2 allocates uid ranges starting at 1<<30,
+ # `restricted` 1000–65535 can exclude it). Live OCP admission + actual
+ # runtime UID/fsGroup verification is live-cluster evidence, not claimed here.
+ # fsGroup is deliberately absent: the pod mounts no volumes, the root
+ # filesystem is read-only, and with --log-dir unset the manager logs
+ # stdout-only, so no filesystem access needs group ownership.
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: quartet-manager
+        image: quay.io/ngxstorage/quartet-operator:v0.0.0-dev
+        command:
+        - /manager
+        args:
+ # --log takes the bare level; quoted values fall back to the default level.
+        - --log=info
+        - --leader-elect
+ # Pinned explicitly (not left to the Go default): health/readiness
+ # probes listen on ALL pod interfaces. A literal IP such as
+ # 10.0.0.0:8081 fails to bind unless the pod was assigned that IP.
+        - --health-probe-bind-address=0.0.0.0:8081
+        ports:
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        env:
+ # Leader election lease namespace (contract); POD_NAME feeds the
+ # go-logutils NodeID.
+        - name: QUARTET_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+ # Manager-pod baseline (not governed by manager baseline — that decision covers
+ # operand workloads, which stay undefined per the raw
+ # contract). Namespace LimitRange can still reshape these.
+          limits:
+            memory: "256Mi"
+          requests:
+            cpu: "10m"
+            memory: "64Mi"
+      terminationGracePeriodSeconds: 10

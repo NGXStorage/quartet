@@ -1,0 +1,9 @@
+{
+  "name": "active-volume-delete-protection",
+  "platform": "kubernetes",
+  "profile": "nfs",
+  "risk": "cluster-scoped-fault",
+  "scope": "cluster-scoped",
+  "precondition": "Live singleton Quartet CR 'quartet' (finalizer quartet.ngxstorage.com/quartet) with an enabled, converged nfs profile; labeled TEST PVC/PV/VolumeAttachment + marker seeded by the case itself in TEST_NAMESPACE; target context and namespace explicitly granted (no silent default). AFFECTS THE TARGET: the mutation deletes the cluster-scoped singleton CR and the usage gate scans PVC/PV/VolumeAttachment cluster-wide by driver identity (internal/controller/apply.go:1132-1203) — an isolated TEST_NAMESPACE does NOT make this safe on the live singleton. Operator uninstall itself (active-volume-delete fault) is a separate, later cell; this case exercises the CR-delete/finalizer path only. Offline cells run against a fake store under $HOME/.cache/ngxstorage; the live cell stays NOT RUN (serial live worker only).",
+  "plan_ref": "offline scenario contract — active-volume-delete-protection"
+}

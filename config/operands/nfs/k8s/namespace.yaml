@@ -1,0 +1,16 @@
+# GENERATED — do not hand-edit.
+# Regenerate with: hack/generate-install-rbac
+#
+# Operator NFS operand namespace (operand namespace) — renderer.Profile.Namespace(),
+# shared by the kubernetes and openshift install sets. First document of
+# every install entrypoint (config/operands/nfs/{k8s,ocp}): the namespaced
+# Role/RoleBinding objects in the RBAC set cannot apply before it exists.
+# Parity-pinned against the renderer by internal/renderer
+# (TestInstallNamespaceParity). The reconciler ALSO ensures this namespace
+# at runtime (namespace ownership) but NEVER deletes it; install-set ownership and runtime
+# ensure are complementary, not conflicting.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ngxstorage-nfs

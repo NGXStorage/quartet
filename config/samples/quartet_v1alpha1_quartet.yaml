@@ -1,0 +1,27 @@
+apiVersion: quartet.ngxstorage.com/v1alpha1
+kind: Quartet
+metadata:
+ # singleton name: the canonical singleton name. Enforcement is reconciler-side
+ # (cluster scope mechanism open); the CRD does not validate metadata.name.
+  name: quartet
+spec:
+  platform: auto
+  logLevel: info
+  profiles:
+ # Example selection: nfs is enabled here explicitly as a sample — no
+ # profile is the operator default. Choose the profile(s) you install.
+    nfs:
+      enabled: true
+      secretRef:
+ # canonical name; same-namespace only (no namespace field).
+        name: nfs-csi-ngxstorage-config
+      image:
+ # digest pin: full OCI digest reference — tag without digest is rejected.
+ # PLACEHOLDER (all-zero digest): replace with the real image digest
+ # from the driver build evidence (build/artifacts/image.json) before
+ # applying; the placeholder itself pulls nothing (ImagePullBackOff).
+        reference: "quay.io/ngxstorage/nfs-csi-ngxstorage@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    fc:
+      enabled: false
+    iscsi:
+      enabled: false

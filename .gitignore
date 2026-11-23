@@ -1,0 +1,7 @@
+/docs/legacy/nfs-csi-operator/repository/operator/bin/
+
+# python bytecode from hack/ retirement tooling tests
+__pycache__/
+
+# make build output
+/bin/

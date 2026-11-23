@@ -1,0 +1,11 @@
+{
+  "name": "foreign-resource-conflict",
+  "platform": "kubernetes",
+  "profile": "nfs",
+  "risk": "cluster-scoped-fault",
+  "scope": "cluster-scoped",
+  "precondition": "Operator installed and the installer-provisioned operand RBAC set applied out-of-band (config/operands/nfs/k8s/ — the reconciler only verifies it, apply.go:221-244); no singleton Quartet CR; the canonical operand names (CSIDriver nfs.csi.ngxstorage.com, ngxstorage-nfs objects) are unoccupied. A namespace is NOT cluster-scoped isolation: the fault is injected at canonical CLUSTER-SCOPED operand names, so risk=cluster-scoped-fault.",
+  "restore": "Case re-applies the real install manifest from the repo (the admin action the RBACDrift message itself instructs), deletes the foreign CSIDriver it planted, the case Quartet CR, its backend Secret in ngxstorage-nfs, and TEST_NAMESPACE. If the manifest restore fails, the case reports FAIL_CLEANUP and leaves the RBAC drift for the admin.",
+  "plan_ref": "offline scenario contract — foreign-resource-conflict",
+  "notes": "foreign-resource-conflict fault NFS-applicable cell, adoption-or-nothing. Operand conflict: ownership gate flags a same-name object without this CR's owner-uid annotation -> ForeignResourceConflict, TERMINAL (no requeue, waits for spec/watch trigger), no adoption/force (apply.go:831-900,140-147; message bound at apply.go:899). Impact bound: apply stops at first failure, earlier owned objects stay, later ones never appear (apply.go:114-118). RBAC: read-only verification gate -> RBACDrift (DRAFT reason, NOT in ValidReasons — quartet_types.go:89-98), retryable, operator never writes RBAC (quartet_controller.go:47-57)."
+}

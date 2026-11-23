@@ -1,0 +1,11 @@
+{
+  "name": "singleton-rejection",
+  "platform": "kubernetes",
+  "profile": "nfs",
+  "risk": "cluster-scoped-fault",
+  "scope": "cluster-scoped",
+  "precondition": "Operator installed (CRD + manager) and the installer-provisioned operand RBAC set applied out-of-band (config/operands/nfs/k8s/); a dedicated TEST_NAMESPACE exists or is creatable; no Quartet CR present. A namespace is NOT cluster-scoped isolation: phase 2 brings up the real singleton, which owns canonical cluster-scoped operands (CSIDriver, RBAC bindings, ngxstorage-nfs), so scope=cluster-scoped. EFFECT (risk is classified by effect, not by declaration): this case creates and deletes the canonical singleton Quartet CR plus operand resources (backend Secret in ngxstorage-nfs, TEST_NAMESPACE), so it is cluster-scoped-fault — never selectable by `all`/`allow-isolated`.",
+  "restore": "Delete the case-created Quartet CRs (the singleton's finalizer cleanup removes only its owned operands; namespaces are never deleted, namespace ownership), the backend Secret in ngxstorage-nfs, and TEST_NAMESPACE. Installer-owned RBAC is never touched.",
+  "plan_ref": "offline scenario contract — singleton-rejection",
+  "notes": "singleton-rejection fault NFS-applicable cell. A different-named CR is API-ACCEPTED (the CRD imposes NO name enforcement — the only CEL rule is platform immutability, config/crd/bases/quartet.ngxstorage.com_quartets.yaml:301-304; api/v1alpha1/quartet_types.go:7-15) and refused by the RECONCILER: ValidateName -> InvalidSpec, terminal, never requeued (api/v1alpha1/validation.go:25-37, internal/controller/quartet_controller.go:109-114); the rejected CR never records specPlatform, never keeps profile claims, never gets a finalizer, never manages operands. Same-name concurrent create is API-atomic (AlreadyExists, quartet_types.go:7-9)."
+}

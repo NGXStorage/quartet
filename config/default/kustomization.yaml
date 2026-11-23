@@ -1,0 +1,18 @@
+# Profile-NEUTRAL install base: quartet-system namespace + CRD + manager
+# RBAC + manager deployment ONLY. No operand install set is selected here.
+# Security model: operand RBAC is INSTALLER-OWNED (out-of-band provisioning
+# via the explicit install sets below); at runtime the reconciler only
+# VERIFIES the pinned RBAC read-only (drift gate) and ensures the operand
+# namespace (namespace ownership get;create) — it does not provision operand RBAC. The
+# install sets are selected EXPLICITLY via config/default-nfs{,-ocp},
+# config/default-fc{,-ocp}, config/default-iscsi{,-ocp} (make
+# install-operands / install-artifacts PROFILE=nfs|fc|iscsi — no default
+# profile). NFS is not the default.
+# explicit placement: every namespaced resource carries its namespace explicitly (no
+# `namespace:` transformer), so the render is deterministic. Pinned by
+# hack/rendertest/config_render_test.go.
+resources:
+- namespace.yaml
+- ../crd
+- ../rbac
+- ../manager

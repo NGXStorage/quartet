@@ -1,0 +1,41 @@
+# Operand RBAC install set (out-of-band RBAC contract) — the GENERATED manifests in
+# this directory are the installer's out-of-band surface: the Quartet
+# manager holds ONLY get/list/watch on the four rbac.authorization.k8s.io
+# kinds and never creates, patches, deletes or binds RBAC at runtime. The
+# admin applies this set, and the reconciler verifies it by pinned name at
+# reconcile start (Degraded/RBACDrift, retryable, until healthy) — operand
+# apply is gated behind the verification.
+#
+# DO NOT hand-edit the generated YAML — regenerate with
+# hack/generate-install-rbac (renderer.InstallRBAC; parity-pinned by
+# internal/renderer).
+#
+# Each entrypoint overlay carries its own generated files (kustomize v5
+# locality forbids referencing files outside the overlay directory):
+# k8s/{namespace.yaml,rbac.yaml} — kubernetes install set
+# ocp/{namespace.yaml,rbac-ocp.yaml} — openshift install set (superset: adds
+# the node SCC use grant)
+# namespace.yaml is the operand namespace operand namespace, the FIRST document of every
+# entrypoint (the namespaced Role/RoleBinding objects cannot apply before it
+# exists — explicit namespace contract); it is byte-identical across both overlays.
+#
+# Entrypoints (deterministic order: namespace → RBAC):
+# k8s: make install-operands PLATFORM=k8s (kubectl apply -k k8s/)
+# ocp: make install-operands PLATFORM=ocp (kubectl apply -k ocp/)
+# The manager itself is a SEPARATE step: kubectl apply -k config/default.
+#
+# This kustomization is the config/default render input: it selects the k8s
+# entrypoint set (namespace → rbac.yaml). kustomize v5's locality constraint
+# forbids file references outside an overlay directory, so each entrypoint
+# carries its OWN generated copies (the ocp namespace.yaml is byte-identical
+# to the k8s one; both are parity-pinned).
+#
+# FC/iSCSI: their install sets live in config/operands/{fc,iscsi}/ (same
+# generated-file contract, parity-pinned by the same tests) and are
+# reached via the explicit profile selection —
+# make install-operands PROFILE=fc|iscsi, or the full-artifact path
+# config/default-fc{,-ocp} / config/default-iscsi{,-ocp} (make
+# install-artifacts PROFILE=fc|iscsi / QUARTET_INSTALL_PROFILE=...).
+# The default (this set) is NFS only and never claims the other profiles.
+resources:
+- k8s

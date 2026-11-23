@@ -1,0 +1,465 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+  name: quartets.quartet.ngxstorage.com
+spec:
+  group: quartet.ngxstorage.com
+  names:
+    kind: Quartet
+    listKind: QuartetList
+    plural: quartets
+    singular: quartet
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          Quartet is the cluster-scoped singleton reconciling the chosen CSI driver
+          profiles. The singleton is enforced RECONCILIER-SIDE ONLY: the CRD
+          accepts objects with other names; the reconciler refuses them with
+          InvalidSpec and never manages operands for them (see QuartetName and
+          ValidateName). The API-level enforcement mechanism is an open design
+          question — do not present the singleton as API-enforced.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              QuartetSpec defines the desired state of Quartet (v1alpha1 draft surface).
+              Placement/resources/QoS fields intentionally have no place here yet.
+
+              Platform immutability at the API level: spec.platform is enforced by the
+              CRD CEL rule below, not only by the reconciler. This closes the
+              status-reset / pre-first-reconcile bypass of the reconciler-side check —
+              the rule compares against oldSelf (the stored spec), which a status write
+              cannot influence. CRD CEL (x-kubernetes-validations) is GA on the
+              supported Kubernetes versions; on create oldSelf equals self, so creation
+              is unaffected. The reconciler-side ValidateImmutablePlatform stays as
+              defense-in-depth for environments without CEL enforcement (fake-client
+              tests, direct storage edits).
+            properties:
+              logLevel:
+                allOf:
+                - enum:
+                  - debug
+                  - info
+                  - warn
+                  - error
+                - enum:
+                  - debug
+                  - info
+                  - warn
+                  - error
+                default: info
+                description: LogLevel for the rendered operands; written unquoted.
+                  Mutable.
+                type: string
+              platform:
+                allOf:
+                - enum:
+                  - auto
+                  - kubernetes
+                  - openshift
+                - enum:
+                  - auto
+                  - kubernetes
+                  - openshift
+                default: auto
+                description: |-
+                  Platform selection. Immutable — enforced at the API level by
+                  the CRD CEL rule on QuartetSpec and re-checked
+                  reconciler-side via status.specPlatform as defense-in-depth.
+                type: string
+              profiles:
+                description: |-
+                  Profiles holds the three explicit driver profiles (S3/COSI is absent
+                  from this API surface entirely).
+                properties:
+                  fc:
+                    description: |-
+                      ProfileSpec is one explicit CSI driver profile (nfs/fc/iscsi).
+
+                      SecretRef.Name and Image.Reference are format-validated by the CRD schema
+                      (patterns) but "required when Enabled" is enforced reconciler-side
+                      (InvalidSpec): this conditional requirement is not expressed as a CEL
+                      rule — the API-level mechanism decision stays open. The one
+                      API-level CEL rule in this API is the platform immutability rule on
+                      QuartetSpec (a closed decision, not part of that mechanism question).
+                    properties:
+                      enabled:
+                        default: false
+                        type: boolean
+                      forceDisable:
+                        description: |-
+                          ForceDisable is the explicit admin override for the active-usage gate:
+                          when true, disabling this profile or deleting the CR proceeds even if
+                          bound/in-use PVCs, PVs or attached VolumeAttachments are present for
+                          the profile's provisioner identity. DRAFT field — the v1alpha1 surface
+                          is a draft API, not a published contract: semantics may change before
+                          stabilization.
+                        type: boolean
+                      image:
+                        description: |-
+                          Driver image with a full OCI digest reference (tags tolerated nowhere;
+                          sidecar digests stay renderer constants and have no spec field).
+                        properties:
+                          reference:
+                            description: |-
+                              Full OCI digest reference: <registry>[:port]/<path...>
+                              @sha256:<64 hex>. The registry host and the repository path are both
+                              mandatory, a port is allowed, and the sha256 digest is required — a
+                              bare tag is rejected (no wrong-acceptance of digest-less refs). The
+                              path uses the OCI normalized lowercase component grammar; the registry
+                              host follows RFC 1123 (underscore is not a legal hostname char, unlike
+                              the earlier [\w]-based pattern).
+                            maxLength: 512
+                            pattern: ^[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?(?::[0-9]{1,5})?/[a-z0-9]+(?:[._-]*[a-z0-9]+)*(?:/[a-z0-9]+(?:[._-]*[a-z0-9]+)*)*@sha256:[0-9a-f]{64}$
+                            type: string
+                        required:
+                        - reference
+                        type: object
+                      secretRef:
+                        description: |-
+                          Reference to a user-owned Secret. The operator never creates or deletes
+                          it and has no Secret API RBAC at all: existence and key presence are
+                          verified by the kubelet as CreateContainerConfigError and surface as a
+                          generic WorkloadNotReady (a finer reason split is unproven).
+                          Same-namespace only (no namespace field).
+                        properties:
+                          name:
+                            description: |-
+                              Kubernetes Secret metadata.name contract: RFC 1123 DNS
+                              SUBDOMAIN — dots ARE allowed and the limit is 253 chars. The earlier
+                              DNS-label pattern wrongly rejected legal names such as
+                              "my.secret.name"; this pattern mirrors the API server's own
+                              validation exactly (no extra restriction).
+                            maxLength: 253
+                            pattern: ^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  iscsi:
+                    description: |-
+                      ProfileSpec is one explicit CSI driver profile (nfs/fc/iscsi).
+
+                      SecretRef.Name and Image.Reference are format-validated by the CRD schema
+                      (patterns) but "required when Enabled" is enforced reconciler-side
+                      (InvalidSpec): this conditional requirement is not expressed as a CEL
+                      rule — the API-level mechanism decision stays open. The one
+                      API-level CEL rule in this API is the platform immutability rule on
+                      QuartetSpec (a closed decision, not part of that mechanism question).
+                    properties:
+                      enabled:
+                        default: false
+                        type: boolean
+                      forceDisable:
+                        description: |-
+                          ForceDisable is the explicit admin override for the active-usage gate:
+                          when true, disabling this profile or deleting the CR proceeds even if
+                          bound/in-use PVCs, PVs or attached VolumeAttachments are present for
+                          the profile's provisioner identity. DRAFT field — the v1alpha1 surface
+                          is a draft API, not a published contract: semantics may change before
+                          stabilization.
+                        type: boolean
+                      image:
+                        description: |-
+                          Driver image with a full OCI digest reference (tags tolerated nowhere;
+                          sidecar digests stay renderer constants and have no spec field).
+                        properties:
+                          reference:
+                            description: |-
+                              Full OCI digest reference: <registry>[:port]/<path...>
+                              @sha256:<64 hex>. The registry host and the repository path are both
+                              mandatory, a port is allowed, and the sha256 digest is required — a
+                              bare tag is rejected (no wrong-acceptance of digest-less refs). The
+                              path uses the OCI normalized lowercase component grammar; the registry
+                              host follows RFC 1123 (underscore is not a legal hostname char, unlike
+                              the earlier [\w]-based pattern).
+                            maxLength: 512
+                            pattern: ^[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?(?::[0-9]{1,5})?/[a-z0-9]+(?:[._-]*[a-z0-9]+)*(?:/[a-z0-9]+(?:[._-]*[a-z0-9]+)*)*@sha256:[0-9a-f]{64}$
+                            type: string
+                        required:
+                        - reference
+                        type: object
+                      secretRef:
+                        description: |-
+                          Reference to a user-owned Secret. The operator never creates or deletes
+                          it and has no Secret API RBAC at all: existence and key presence are
+                          verified by the kubelet as CreateContainerConfigError and surface as a
+                          generic WorkloadNotReady (a finer reason split is unproven).
+                          Same-namespace only (no namespace field).
+                        properties:
+                          name:
+                            description: |-
+                              Kubernetes Secret metadata.name contract: RFC 1123 DNS
+                              SUBDOMAIN — dots ARE allowed and the limit is 253 chars. The earlier
+                              DNS-label pattern wrongly rejected legal names such as
+                              "my.secret.name"; this pattern mirrors the API server's own
+                              validation exactly (no extra restriction).
+                            maxLength: 253
+                            pattern: ^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                  nfs:
+                    description: |-
+                      ProfileSpec is one explicit CSI driver profile (nfs/fc/iscsi).
+
+                      SecretRef.Name and Image.Reference are format-validated by the CRD schema
+                      (patterns) but "required when Enabled" is enforced reconciler-side
+                      (InvalidSpec): this conditional requirement is not expressed as a CEL
+                      rule — the API-level mechanism decision stays open. The one
+                      API-level CEL rule in this API is the platform immutability rule on
+                      QuartetSpec (a closed decision, not part of that mechanism question).
+                    properties:
+                      enabled:
+                        default: false
+                        type: boolean
+                      forceDisable:
+                        description: |-
+                          ForceDisable is the explicit admin override for the active-usage gate:
+                          when true, disabling this profile or deleting the CR proceeds even if
+                          bound/in-use PVCs, PVs or attached VolumeAttachments are present for
+                          the profile's provisioner identity. DRAFT field — the v1alpha1 surface
+                          is a draft API, not a published contract: semantics may change before
+                          stabilization.
+                        type: boolean
+                      image:
+                        description: |-
+                          Driver image with a full OCI digest reference (tags tolerated nowhere;
+                          sidecar digests stay renderer constants and have no spec field).
+                        properties:
+                          reference:
+                            description: |-
+                              Full OCI digest reference: <registry>[:port]/<path...>
+                              @sha256:<64 hex>. The registry host and the repository path are both
+                              mandatory, a port is allowed, and the sha256 digest is required — a
+                              bare tag is rejected (no wrong-acceptance of digest-less refs). The
+                              path uses the OCI normalized lowercase component grammar; the registry
+                              host follows RFC 1123 (underscore is not a legal hostname char, unlike
+                              the earlier [\w]-based pattern).
+                            maxLength: 512
+                            pattern: ^[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?(?::[0-9]{1,5})?/[a-z0-9]+(?:[._-]*[a-z0-9]+)*(?:/[a-z0-9]+(?:[._-]*[a-z0-9]+)*)*@sha256:[0-9a-f]{64}$
+                            type: string
+                        required:
+                        - reference
+                        type: object
+                      secretRef:
+                        description: |-
+                          Reference to a user-owned Secret. The operator never creates or deletes
+                          it and has no Secret API RBAC at all: existence and key presence are
+                          verified by the kubelet as CreateContainerConfigError and surface as a
+                          generic WorkloadNotReady (a finer reason split is unproven).
+                          Same-namespace only (no namespace field).
+                        properties:
+                          name:
+                            description: |-
+                              Kubernetes Secret metadata.name contract: RFC 1123 DNS
+                              SUBDOMAIN — dots ARE allowed and the limit is 253 chars. The earlier
+                              DNS-label pattern wrongly rejected legal names such as
+                              "my.secret.name"; this pattern mirrors the API server's own
+                              validation exactly (no extra restriction).
+                            maxLength: 253
+                            pattern: ^[a-z0-9]([-a-z0-9.]*[a-z0-9])?$
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    type: object
+                type: object
+            required:
+            - platform
+            - profiles
+            type: object
+            x-kubernetes-validations:
+            - message: spec.platform is immutable; delete the CR after draining usage,
+                then create it again
+              rule: self.platform == oldSelf.platform
+          status:
+            description: QuartetStatus defines the observed state of Quartet.
+            properties:
+              conditions:
+                description: Aggregate conditions; Ready reflects the whole singleton.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              observedGeneration:
+                description: ObservedGeneration is the Quartet .metadata.generation
+                  last reconciled.
+                format: int64
+                type: integer
+              profiles:
+                additionalProperties:
+                  description: |-
+                    ProfileStatus is the per-profile status block (profiles[].conditions
+                    carry Ready/Progressing/Degraded). Only enabled profiles appear in
+                    status.profiles; disabled profiles produce no operand and make no claim.
+                  properties:
+                    conditions:
+                      items:
+                        description: Condition contains details for one aspect of
+                          the current state of this API Resource.
+                        properties:
+                          lastTransitionTime:
+                            description: |-
+                              lastTransitionTime is the last time the condition transitioned from one status to another.
+                              This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                            format: date-time
+                            type: string
+                          message:
+                            description: |-
+                              message is a human readable message indicating details about the transition.
+                              This may be an empty string.
+                            maxLength: 32768
+                            type: string
+                          observedGeneration:
+                            description: |-
+                              observedGeneration represents the .metadata.generation that the condition was set based upon.
+                              For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                              with respect to the current state of the instance.
+                            format: int64
+                            minimum: 0
+                            type: integer
+                          reason:
+                            description: |-
+                              reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                              Producers of specific condition types may define expected values and meanings for this field,
+                              and whether the values are considered a guaranteed API.
+                              The value should be a CamelCase string.
+                              This field may not be empty.
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: status of the condition, one of True, False,
+                              Unknown.
+                            enum:
+                            - "True"
+                            - "False"
+                            - Unknown
+                            type: string
+                          type:
+                            description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                        - lastTransitionTime
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      type: array
+                  type: object
+                description: |-
+                  Per-profile status for enabled profiles, keyed by profile name
+                  (nfs/fc/iscsi).
+                type: object
+              resolvedPlatform:
+                description: |-
+                  ResolvedPlatform is the effective platform after detection
+                  (meaningful when spec.platform=auto).
+                enum:
+                - auto
+                - kubernetes
+                - openshift
+                type: string
+              specPlatform:
+                description: |-
+                  SpecPlatform records the declared spec.platform value the reconciler
+                  first accepted; any later change to spec.platform is an InvalidSpec
+                  (platform immutability). Primary enforcement is the API-level CRD CEL
+                  rule on QuartetSpec; this field-backed check is defense-in-depth and
+                  is BYPASSABLE by clearing the status (documented residual, pinned by
+                  TestImmutablePlatformStatusClearResidualLimitation).
+                enum:
+                - auto
+                - kubernetes
+                - openshift
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

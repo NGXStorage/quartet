@@ -1,0 +1,538 @@
+# GENERATED — do not hand-edit.
+# Regenerate with: hack/generate-install-rbac
+#
+# Operator FC operand RBAC install set (platform: openshift) — renderer.InstallRBAC().
+# Out-of-band provisioning (out-of-band RBAC contract): the Quartet manager holds ONLY
+# get/list/watch on the four rbac.authorization.k8s.io kinds and never mutates
+# RBAC at runtime. The admin applies this set with the install manifest; the
+# reconciler verifies it by pinned name at reconcile start (Degraded/RBACDrift
+# until healthy) and gates operand apply behind it. Uninstalling this set is
+# the installer's step, not the operator's.
+# Parity-pinned against the renderer by internal/renderer (TestInstallRBACParity).
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fc-csi-ngxstorage-controller
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - csinodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments/status
+  verbs:
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotclasses
+  - volumesnapshots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents/status
+  verbs:
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - fc-csi-ngxstorage-operation-lock-000
+  - fc-csi-ngxstorage-operation-lock-001
+  - fc-csi-ngxstorage-operation-lock-002
+  - fc-csi-ngxstorage-operation-lock-003
+  - fc-csi-ngxstorage-operation-lock-004
+  - fc-csi-ngxstorage-operation-lock-005
+  - fc-csi-ngxstorage-operation-lock-006
+  - fc-csi-ngxstorage-operation-lock-007
+  - fc-csi-ngxstorage-operation-lock-008
+  - fc-csi-ngxstorage-operation-lock-009
+  - fc-csi-ngxstorage-operation-lock-010
+  - fc-csi-ngxstorage-operation-lock-011
+  - fc-csi-ngxstorage-operation-lock-012
+  - fc-csi-ngxstorage-operation-lock-013
+  - fc-csi-ngxstorage-operation-lock-014
+  - fc-csi-ngxstorage-operation-lock-015
+  - fc-csi-ngxstorage-operation-lock-016
+  - fc-csi-ngxstorage-operation-lock-017
+  - fc-csi-ngxstorage-operation-lock-018
+  - fc-csi-ngxstorage-operation-lock-019
+  - fc-csi-ngxstorage-operation-lock-020
+  - fc-csi-ngxstorage-operation-lock-021
+  - fc-csi-ngxstorage-operation-lock-022
+  - fc-csi-ngxstorage-operation-lock-023
+  - fc-csi-ngxstorage-operation-lock-024
+  - fc-csi-ngxstorage-operation-lock-025
+  - fc-csi-ngxstorage-operation-lock-026
+  - fc-csi-ngxstorage-operation-lock-027
+  - fc-csi-ngxstorage-operation-lock-028
+  - fc-csi-ngxstorage-operation-lock-029
+  - fc-csi-ngxstorage-operation-lock-030
+  - fc-csi-ngxstorage-operation-lock-031
+  - fc-csi-ngxstorage-operation-lock-032
+  - fc-csi-ngxstorage-operation-lock-033
+  - fc-csi-ngxstorage-operation-lock-034
+  - fc-csi-ngxstorage-operation-lock-035
+  - fc-csi-ngxstorage-operation-lock-036
+  - fc-csi-ngxstorage-operation-lock-037
+  - fc-csi-ngxstorage-operation-lock-038
+  - fc-csi-ngxstorage-operation-lock-039
+  - fc-csi-ngxstorage-operation-lock-040
+  - fc-csi-ngxstorage-operation-lock-041
+  - fc-csi-ngxstorage-operation-lock-042
+  - fc-csi-ngxstorage-operation-lock-043
+  - fc-csi-ngxstorage-operation-lock-044
+  - fc-csi-ngxstorage-operation-lock-045
+  - fc-csi-ngxstorage-operation-lock-046
+  - fc-csi-ngxstorage-operation-lock-047
+  - fc-csi-ngxstorage-operation-lock-048
+  - fc-csi-ngxstorage-operation-lock-049
+  - fc-csi-ngxstorage-operation-lock-050
+  - fc-csi-ngxstorage-operation-lock-051
+  - fc-csi-ngxstorage-operation-lock-052
+  - fc-csi-ngxstorage-operation-lock-053
+  - fc-csi-ngxstorage-operation-lock-054
+  - fc-csi-ngxstorage-operation-lock-055
+  - fc-csi-ngxstorage-operation-lock-056
+  - fc-csi-ngxstorage-operation-lock-057
+  - fc-csi-ngxstorage-operation-lock-058
+  - fc-csi-ngxstorage-operation-lock-059
+  - fc-csi-ngxstorage-operation-lock-060
+  - fc-csi-ngxstorage-operation-lock-061
+  - fc-csi-ngxstorage-operation-lock-062
+  - fc-csi-ngxstorage-operation-lock-063
+  - fc-csi-ngxstorage-operation-lock-064
+  - fc-csi-ngxstorage-operation-lock-065
+  - fc-csi-ngxstorage-operation-lock-066
+  - fc-csi-ngxstorage-operation-lock-067
+  - fc-csi-ngxstorage-operation-lock-068
+  - fc-csi-ngxstorage-operation-lock-069
+  - fc-csi-ngxstorage-operation-lock-070
+  - fc-csi-ngxstorage-operation-lock-071
+  - fc-csi-ngxstorage-operation-lock-072
+  - fc-csi-ngxstorage-operation-lock-073
+  - fc-csi-ngxstorage-operation-lock-074
+  - fc-csi-ngxstorage-operation-lock-075
+  - fc-csi-ngxstorage-operation-lock-076
+  - fc-csi-ngxstorage-operation-lock-077
+  - fc-csi-ngxstorage-operation-lock-078
+  - fc-csi-ngxstorage-operation-lock-079
+  - fc-csi-ngxstorage-operation-lock-080
+  - fc-csi-ngxstorage-operation-lock-081
+  - fc-csi-ngxstorage-operation-lock-082
+  - fc-csi-ngxstorage-operation-lock-083
+  - fc-csi-ngxstorage-operation-lock-084
+  - fc-csi-ngxstorage-operation-lock-085
+  - fc-csi-ngxstorage-operation-lock-086
+  - fc-csi-ngxstorage-operation-lock-087
+  - fc-csi-ngxstorage-operation-lock-088
+  - fc-csi-ngxstorage-operation-lock-089
+  - fc-csi-ngxstorage-operation-lock-090
+  - fc-csi-ngxstorage-operation-lock-091
+  - fc-csi-ngxstorage-operation-lock-092
+  - fc-csi-ngxstorage-operation-lock-093
+  - fc-csi-ngxstorage-operation-lock-094
+  - fc-csi-ngxstorage-operation-lock-095
+  - fc-csi-ngxstorage-operation-lock-096
+  - fc-csi-ngxstorage-operation-lock-097
+  - fc-csi-ngxstorage-operation-lock-098
+  - fc-csi-ngxstorage-operation-lock-099
+  - fc-csi-ngxstorage-operation-lock-100
+  - fc-csi-ngxstorage-operation-lock-101
+  - fc-csi-ngxstorage-operation-lock-102
+  - fc-csi-ngxstorage-operation-lock-103
+  - fc-csi-ngxstorage-operation-lock-104
+  - fc-csi-ngxstorage-operation-lock-105
+  - fc-csi-ngxstorage-operation-lock-106
+  - fc-csi-ngxstorage-operation-lock-107
+  - fc-csi-ngxstorage-operation-lock-108
+  - fc-csi-ngxstorage-operation-lock-109
+  - fc-csi-ngxstorage-operation-lock-110
+  - fc-csi-ngxstorage-operation-lock-111
+  - fc-csi-ngxstorage-operation-lock-112
+  - fc-csi-ngxstorage-operation-lock-113
+  - fc-csi-ngxstorage-operation-lock-114
+  - fc-csi-ngxstorage-operation-lock-115
+  - fc-csi-ngxstorage-operation-lock-116
+  - fc-csi-ngxstorage-operation-lock-117
+  - fc-csi-ngxstorage-operation-lock-118
+  - fc-csi-ngxstorage-operation-lock-119
+  - fc-csi-ngxstorage-operation-lock-120
+  - fc-csi-ngxstorage-operation-lock-121
+  - fc-csi-ngxstorage-operation-lock-122
+  - fc-csi-ngxstorage-operation-lock-123
+  - fc-csi-ngxstorage-operation-lock-124
+  - fc-csi-ngxstorage-operation-lock-125
+  - fc-csi-ngxstorage-operation-lock-126
+  - fc-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - fc-csi-ngxstorage-operation-lock-000
+  - fc-csi-ngxstorage-operation-lock-001
+  - fc-csi-ngxstorage-operation-lock-002
+  - fc-csi-ngxstorage-operation-lock-003
+  - fc-csi-ngxstorage-operation-lock-004
+  - fc-csi-ngxstorage-operation-lock-005
+  - fc-csi-ngxstorage-operation-lock-006
+  - fc-csi-ngxstorage-operation-lock-007
+  - fc-csi-ngxstorage-operation-lock-008
+  - fc-csi-ngxstorage-operation-lock-009
+  - fc-csi-ngxstorage-operation-lock-010
+  - fc-csi-ngxstorage-operation-lock-011
+  - fc-csi-ngxstorage-operation-lock-012
+  - fc-csi-ngxstorage-operation-lock-013
+  - fc-csi-ngxstorage-operation-lock-014
+  - fc-csi-ngxstorage-operation-lock-015
+  - fc-csi-ngxstorage-operation-lock-016
+  - fc-csi-ngxstorage-operation-lock-017
+  - fc-csi-ngxstorage-operation-lock-018
+  - fc-csi-ngxstorage-operation-lock-019
+  - fc-csi-ngxstorage-operation-lock-020
+  - fc-csi-ngxstorage-operation-lock-021
+  - fc-csi-ngxstorage-operation-lock-022
+  - fc-csi-ngxstorage-operation-lock-023
+  - fc-csi-ngxstorage-operation-lock-024
+  - fc-csi-ngxstorage-operation-lock-025
+  - fc-csi-ngxstorage-operation-lock-026
+  - fc-csi-ngxstorage-operation-lock-027
+  - fc-csi-ngxstorage-operation-lock-028
+  - fc-csi-ngxstorage-operation-lock-029
+  - fc-csi-ngxstorage-operation-lock-030
+  - fc-csi-ngxstorage-operation-lock-031
+  - fc-csi-ngxstorage-operation-lock-032
+  - fc-csi-ngxstorage-operation-lock-033
+  - fc-csi-ngxstorage-operation-lock-034
+  - fc-csi-ngxstorage-operation-lock-035
+  - fc-csi-ngxstorage-operation-lock-036
+  - fc-csi-ngxstorage-operation-lock-037
+  - fc-csi-ngxstorage-operation-lock-038
+  - fc-csi-ngxstorage-operation-lock-039
+  - fc-csi-ngxstorage-operation-lock-040
+  - fc-csi-ngxstorage-operation-lock-041
+  - fc-csi-ngxstorage-operation-lock-042
+  - fc-csi-ngxstorage-operation-lock-043
+  - fc-csi-ngxstorage-operation-lock-044
+  - fc-csi-ngxstorage-operation-lock-045
+  - fc-csi-ngxstorage-operation-lock-046
+  - fc-csi-ngxstorage-operation-lock-047
+  - fc-csi-ngxstorage-operation-lock-048
+  - fc-csi-ngxstorage-operation-lock-049
+  - fc-csi-ngxstorage-operation-lock-050
+  - fc-csi-ngxstorage-operation-lock-051
+  - fc-csi-ngxstorage-operation-lock-052
+  - fc-csi-ngxstorage-operation-lock-053
+  - fc-csi-ngxstorage-operation-lock-054
+  - fc-csi-ngxstorage-operation-lock-055
+  - fc-csi-ngxstorage-operation-lock-056
+  - fc-csi-ngxstorage-operation-lock-057
+  - fc-csi-ngxstorage-operation-lock-058
+  - fc-csi-ngxstorage-operation-lock-059
+  - fc-csi-ngxstorage-operation-lock-060
+  - fc-csi-ngxstorage-operation-lock-061
+  - fc-csi-ngxstorage-operation-lock-062
+  - fc-csi-ngxstorage-operation-lock-063
+  - fc-csi-ngxstorage-operation-lock-064
+  - fc-csi-ngxstorage-operation-lock-065
+  - fc-csi-ngxstorage-operation-lock-066
+  - fc-csi-ngxstorage-operation-lock-067
+  - fc-csi-ngxstorage-operation-lock-068
+  - fc-csi-ngxstorage-operation-lock-069
+  - fc-csi-ngxstorage-operation-lock-070
+  - fc-csi-ngxstorage-operation-lock-071
+  - fc-csi-ngxstorage-operation-lock-072
+  - fc-csi-ngxstorage-operation-lock-073
+  - fc-csi-ngxstorage-operation-lock-074
+  - fc-csi-ngxstorage-operation-lock-075
+  - fc-csi-ngxstorage-operation-lock-076
+  - fc-csi-ngxstorage-operation-lock-077
+  - fc-csi-ngxstorage-operation-lock-078
+  - fc-csi-ngxstorage-operation-lock-079
+  - fc-csi-ngxstorage-operation-lock-080
+  - fc-csi-ngxstorage-operation-lock-081
+  - fc-csi-ngxstorage-operation-lock-082
+  - fc-csi-ngxstorage-operation-lock-083
+  - fc-csi-ngxstorage-operation-lock-084
+  - fc-csi-ngxstorage-operation-lock-085
+  - fc-csi-ngxstorage-operation-lock-086
+  - fc-csi-ngxstorage-operation-lock-087
+  - fc-csi-ngxstorage-operation-lock-088
+  - fc-csi-ngxstorage-operation-lock-089
+  - fc-csi-ngxstorage-operation-lock-090
+  - fc-csi-ngxstorage-operation-lock-091
+  - fc-csi-ngxstorage-operation-lock-092
+  - fc-csi-ngxstorage-operation-lock-093
+  - fc-csi-ngxstorage-operation-lock-094
+  - fc-csi-ngxstorage-operation-lock-095
+  - fc-csi-ngxstorage-operation-lock-096
+  - fc-csi-ngxstorage-operation-lock-097
+  - fc-csi-ngxstorage-operation-lock-098
+  - fc-csi-ngxstorage-operation-lock-099
+  - fc-csi-ngxstorage-operation-lock-100
+  - fc-csi-ngxstorage-operation-lock-101
+  - fc-csi-ngxstorage-operation-lock-102
+  - fc-csi-ngxstorage-operation-lock-103
+  - fc-csi-ngxstorage-operation-lock-104
+  - fc-csi-ngxstorage-operation-lock-105
+  - fc-csi-ngxstorage-operation-lock-106
+  - fc-csi-ngxstorage-operation-lock-107
+  - fc-csi-ngxstorage-operation-lock-108
+  - fc-csi-ngxstorage-operation-lock-109
+  - fc-csi-ngxstorage-operation-lock-110
+  - fc-csi-ngxstorage-operation-lock-111
+  - fc-csi-ngxstorage-operation-lock-112
+  - fc-csi-ngxstorage-operation-lock-113
+  - fc-csi-ngxstorage-operation-lock-114
+  - fc-csi-ngxstorage-operation-lock-115
+  - fc-csi-ngxstorage-operation-lock-116
+  - fc-csi-ngxstorage-operation-lock-117
+  - fc-csi-ngxstorage-operation-lock-118
+  - fc-csi-ngxstorage-operation-lock-119
+  - fc-csi-ngxstorage-operation-lock-120
+  - fc-csi-ngxstorage-operation-lock-121
+  - fc-csi-ngxstorage-operation-lock-122
+  - fc-csi-ngxstorage-operation-lock-123
+  - fc-csi-ngxstorage-operation-lock-124
+  - fc-csi-ngxstorage-operation-lock-125
+  - fc-csi-ngxstorage-operation-lock-126
+  - fc-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-leader-election
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fc-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-fc
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - fc-csi-ngxstorage-node-scc
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-controller-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-leader-election
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-leader-election
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-holder-pod-read
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fc-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-fc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fc-csi-ngxstorage-node-scc-use
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-node
+  namespace: ngxstorage-fc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fc-csi-ngxstorage-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fc-csi-ngxstorage-controller
+subjects:
+- kind: ServiceAccount
+  name: fc-csi-ngxstorage-controller
+  namespace: ngxstorage-fc

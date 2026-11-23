@@ -1,0 +1,2202 @@
+# ------------------------------------------------------------------------------
+# GOLDEN SOURCE: this fixture is a FIELD-LEVEL MIRROR of the
+# upstream iSCSI RAW OpenShift render — NOT byte-identical to it. Approved
+# transforms applied to the raw before comparison:
+# StorageClass/VolumeSnapshotClass dropped (150 -> 148 docs)
+# volumeattributesclasses ClusterRole rule dropped (raw had 13 rules ->
+# 12; no --feature-gates arg rewrite needed, see k8s header)
+# env/secret-name set canonicalized to the helm set (the adopted default
+# default — full transform record in the k8s header)
+# driver digest -> parity reference (see iscsiGoldenDriverImage)
+# placement rule OCP node DaemonSet worker-pin + openshift.io/required-scc: already in
+# the pinned raw; the verifier asserts and ensures idempotently
+# --log=info retained UNQUOTED; coordination retained
+# OCP-only documents vs k8s: SCC iscsi-csi-ngxstorage-node-scc, scc-use
+# Role + RoleBinding (field set byte-identical to the NFS SCC, name differs).
+# NOT applied (open cells — raw contract mirrored, see iscsi.go header):
+# fsGroupPolicy File fsGroupPolicy File kept; placement rule controller placement: the pinned raw
+# already carries the adopted free-placement default; health-port parity raw livenessprobe
+# --health-port + node /registration mount kept.
+# Raw version: ContainerStorage/CSI/Driver/iSCSI @ 3e138b2dc56490b1c60d16298a85be227ec89cae
+# (branch v2.0.0), deploy/manifest/openshift, pinned checkout-external via
+# `git archive`, rendered with kustomize v5.7.1 (identical to the pinned
+# snapshot 71eba6d; canonical env/secret names helm set pin — see k8s header).
+# Regeneration: `make golden-verify` (hack/verify-golden.sh + hack/
+# golden-verify) re-renders the pinned raw checkout-external with the
+# pinned kustomize, applies ONLY the transforms above, and field-compares
+# against this fixture — independent of the renderer code path.
+# Render-side normalization (normalized comparison class, see pruneISCSI in
+# iscsi_parity_test.go): Go omitempty does not apply to the non-pointer
+# DaemonSetSpec.UpdateStrategy, so the typed render emits updateStrategy: {}
+# where the pinned raw omits it; exactly that zero-value shell is pruned.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: iscsi-csi-ngxstorage-controller
+  namespace: ngxstorage-iscsi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: iscsi-csi-ngxstorage-node
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iscsi-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-iscsi
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - iscsi-csi-ngxstorage-operation-lock-000
+  - iscsi-csi-ngxstorage-operation-lock-001
+  - iscsi-csi-ngxstorage-operation-lock-002
+  - iscsi-csi-ngxstorage-operation-lock-003
+  - iscsi-csi-ngxstorage-operation-lock-004
+  - iscsi-csi-ngxstorage-operation-lock-005
+  - iscsi-csi-ngxstorage-operation-lock-006
+  - iscsi-csi-ngxstorage-operation-lock-007
+  - iscsi-csi-ngxstorage-operation-lock-008
+  - iscsi-csi-ngxstorage-operation-lock-009
+  - iscsi-csi-ngxstorage-operation-lock-010
+  - iscsi-csi-ngxstorage-operation-lock-011
+  - iscsi-csi-ngxstorage-operation-lock-012
+  - iscsi-csi-ngxstorage-operation-lock-013
+  - iscsi-csi-ngxstorage-operation-lock-014
+  - iscsi-csi-ngxstorage-operation-lock-015
+  - iscsi-csi-ngxstorage-operation-lock-016
+  - iscsi-csi-ngxstorage-operation-lock-017
+  - iscsi-csi-ngxstorage-operation-lock-018
+  - iscsi-csi-ngxstorage-operation-lock-019
+  - iscsi-csi-ngxstorage-operation-lock-020
+  - iscsi-csi-ngxstorage-operation-lock-021
+  - iscsi-csi-ngxstorage-operation-lock-022
+  - iscsi-csi-ngxstorage-operation-lock-023
+  - iscsi-csi-ngxstorage-operation-lock-024
+  - iscsi-csi-ngxstorage-operation-lock-025
+  - iscsi-csi-ngxstorage-operation-lock-026
+  - iscsi-csi-ngxstorage-operation-lock-027
+  - iscsi-csi-ngxstorage-operation-lock-028
+  - iscsi-csi-ngxstorage-operation-lock-029
+  - iscsi-csi-ngxstorage-operation-lock-030
+  - iscsi-csi-ngxstorage-operation-lock-031
+  - iscsi-csi-ngxstorage-operation-lock-032
+  - iscsi-csi-ngxstorage-operation-lock-033
+  - iscsi-csi-ngxstorage-operation-lock-034
+  - iscsi-csi-ngxstorage-operation-lock-035
+  - iscsi-csi-ngxstorage-operation-lock-036
+  - iscsi-csi-ngxstorage-operation-lock-037
+  - iscsi-csi-ngxstorage-operation-lock-038
+  - iscsi-csi-ngxstorage-operation-lock-039
+  - iscsi-csi-ngxstorage-operation-lock-040
+  - iscsi-csi-ngxstorage-operation-lock-041
+  - iscsi-csi-ngxstorage-operation-lock-042
+  - iscsi-csi-ngxstorage-operation-lock-043
+  - iscsi-csi-ngxstorage-operation-lock-044
+  - iscsi-csi-ngxstorage-operation-lock-045
+  - iscsi-csi-ngxstorage-operation-lock-046
+  - iscsi-csi-ngxstorage-operation-lock-047
+  - iscsi-csi-ngxstorage-operation-lock-048
+  - iscsi-csi-ngxstorage-operation-lock-049
+  - iscsi-csi-ngxstorage-operation-lock-050
+  - iscsi-csi-ngxstorage-operation-lock-051
+  - iscsi-csi-ngxstorage-operation-lock-052
+  - iscsi-csi-ngxstorage-operation-lock-053
+  - iscsi-csi-ngxstorage-operation-lock-054
+  - iscsi-csi-ngxstorage-operation-lock-055
+  - iscsi-csi-ngxstorage-operation-lock-056
+  - iscsi-csi-ngxstorage-operation-lock-057
+  - iscsi-csi-ngxstorage-operation-lock-058
+  - iscsi-csi-ngxstorage-operation-lock-059
+  - iscsi-csi-ngxstorage-operation-lock-060
+  - iscsi-csi-ngxstorage-operation-lock-061
+  - iscsi-csi-ngxstorage-operation-lock-062
+  - iscsi-csi-ngxstorage-operation-lock-063
+  - iscsi-csi-ngxstorage-operation-lock-064
+  - iscsi-csi-ngxstorage-operation-lock-065
+  - iscsi-csi-ngxstorage-operation-lock-066
+  - iscsi-csi-ngxstorage-operation-lock-067
+  - iscsi-csi-ngxstorage-operation-lock-068
+  - iscsi-csi-ngxstorage-operation-lock-069
+  - iscsi-csi-ngxstorage-operation-lock-070
+  - iscsi-csi-ngxstorage-operation-lock-071
+  - iscsi-csi-ngxstorage-operation-lock-072
+  - iscsi-csi-ngxstorage-operation-lock-073
+  - iscsi-csi-ngxstorage-operation-lock-074
+  - iscsi-csi-ngxstorage-operation-lock-075
+  - iscsi-csi-ngxstorage-operation-lock-076
+  - iscsi-csi-ngxstorage-operation-lock-077
+  - iscsi-csi-ngxstorage-operation-lock-078
+  - iscsi-csi-ngxstorage-operation-lock-079
+  - iscsi-csi-ngxstorage-operation-lock-080
+  - iscsi-csi-ngxstorage-operation-lock-081
+  - iscsi-csi-ngxstorage-operation-lock-082
+  - iscsi-csi-ngxstorage-operation-lock-083
+  - iscsi-csi-ngxstorage-operation-lock-084
+  - iscsi-csi-ngxstorage-operation-lock-085
+  - iscsi-csi-ngxstorage-operation-lock-086
+  - iscsi-csi-ngxstorage-operation-lock-087
+  - iscsi-csi-ngxstorage-operation-lock-088
+  - iscsi-csi-ngxstorage-operation-lock-089
+  - iscsi-csi-ngxstorage-operation-lock-090
+  - iscsi-csi-ngxstorage-operation-lock-091
+  - iscsi-csi-ngxstorage-operation-lock-092
+  - iscsi-csi-ngxstorage-operation-lock-093
+  - iscsi-csi-ngxstorage-operation-lock-094
+  - iscsi-csi-ngxstorage-operation-lock-095
+  - iscsi-csi-ngxstorage-operation-lock-096
+  - iscsi-csi-ngxstorage-operation-lock-097
+  - iscsi-csi-ngxstorage-operation-lock-098
+  - iscsi-csi-ngxstorage-operation-lock-099
+  - iscsi-csi-ngxstorage-operation-lock-100
+  - iscsi-csi-ngxstorage-operation-lock-101
+  - iscsi-csi-ngxstorage-operation-lock-102
+  - iscsi-csi-ngxstorage-operation-lock-103
+  - iscsi-csi-ngxstorage-operation-lock-104
+  - iscsi-csi-ngxstorage-operation-lock-105
+  - iscsi-csi-ngxstorage-operation-lock-106
+  - iscsi-csi-ngxstorage-operation-lock-107
+  - iscsi-csi-ngxstorage-operation-lock-108
+  - iscsi-csi-ngxstorage-operation-lock-109
+  - iscsi-csi-ngxstorage-operation-lock-110
+  - iscsi-csi-ngxstorage-operation-lock-111
+  - iscsi-csi-ngxstorage-operation-lock-112
+  - iscsi-csi-ngxstorage-operation-lock-113
+  - iscsi-csi-ngxstorage-operation-lock-114
+  - iscsi-csi-ngxstorage-operation-lock-115
+  - iscsi-csi-ngxstorage-operation-lock-116
+  - iscsi-csi-ngxstorage-operation-lock-117
+  - iscsi-csi-ngxstorage-operation-lock-118
+  - iscsi-csi-ngxstorage-operation-lock-119
+  - iscsi-csi-ngxstorage-operation-lock-120
+  - iscsi-csi-ngxstorage-operation-lock-121
+  - iscsi-csi-ngxstorage-operation-lock-122
+  - iscsi-csi-ngxstorage-operation-lock-123
+  - iscsi-csi-ngxstorage-operation-lock-124
+  - iscsi-csi-ngxstorage-operation-lock-125
+  - iscsi-csi-ngxstorage-operation-lock-126
+  - iscsi-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iscsi-csi-ngxstorage-leader-election
+  namespace: ngxstorage-iscsi
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iscsi-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-iscsi
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iscsi-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-iscsi
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resourceNames:
+  - iscsi-csi-ngxstorage-operation-lock-000
+  - iscsi-csi-ngxstorage-operation-lock-001
+  - iscsi-csi-ngxstorage-operation-lock-002
+  - iscsi-csi-ngxstorage-operation-lock-003
+  - iscsi-csi-ngxstorage-operation-lock-004
+  - iscsi-csi-ngxstorage-operation-lock-005
+  - iscsi-csi-ngxstorage-operation-lock-006
+  - iscsi-csi-ngxstorage-operation-lock-007
+  - iscsi-csi-ngxstorage-operation-lock-008
+  - iscsi-csi-ngxstorage-operation-lock-009
+  - iscsi-csi-ngxstorage-operation-lock-010
+  - iscsi-csi-ngxstorage-operation-lock-011
+  - iscsi-csi-ngxstorage-operation-lock-012
+  - iscsi-csi-ngxstorage-operation-lock-013
+  - iscsi-csi-ngxstorage-operation-lock-014
+  - iscsi-csi-ngxstorage-operation-lock-015
+  - iscsi-csi-ngxstorage-operation-lock-016
+  - iscsi-csi-ngxstorage-operation-lock-017
+  - iscsi-csi-ngxstorage-operation-lock-018
+  - iscsi-csi-ngxstorage-operation-lock-019
+  - iscsi-csi-ngxstorage-operation-lock-020
+  - iscsi-csi-ngxstorage-operation-lock-021
+  - iscsi-csi-ngxstorage-operation-lock-022
+  - iscsi-csi-ngxstorage-operation-lock-023
+  - iscsi-csi-ngxstorage-operation-lock-024
+  - iscsi-csi-ngxstorage-operation-lock-025
+  - iscsi-csi-ngxstorage-operation-lock-026
+  - iscsi-csi-ngxstorage-operation-lock-027
+  - iscsi-csi-ngxstorage-operation-lock-028
+  - iscsi-csi-ngxstorage-operation-lock-029
+  - iscsi-csi-ngxstorage-operation-lock-030
+  - iscsi-csi-ngxstorage-operation-lock-031
+  - iscsi-csi-ngxstorage-operation-lock-032
+  - iscsi-csi-ngxstorage-operation-lock-033
+  - iscsi-csi-ngxstorage-operation-lock-034
+  - iscsi-csi-ngxstorage-operation-lock-035
+  - iscsi-csi-ngxstorage-operation-lock-036
+  - iscsi-csi-ngxstorage-operation-lock-037
+  - iscsi-csi-ngxstorage-operation-lock-038
+  - iscsi-csi-ngxstorage-operation-lock-039
+  - iscsi-csi-ngxstorage-operation-lock-040
+  - iscsi-csi-ngxstorage-operation-lock-041
+  - iscsi-csi-ngxstorage-operation-lock-042
+  - iscsi-csi-ngxstorage-operation-lock-043
+  - iscsi-csi-ngxstorage-operation-lock-044
+  - iscsi-csi-ngxstorage-operation-lock-045
+  - iscsi-csi-ngxstorage-operation-lock-046
+  - iscsi-csi-ngxstorage-operation-lock-047
+  - iscsi-csi-ngxstorage-operation-lock-048
+  - iscsi-csi-ngxstorage-operation-lock-049
+  - iscsi-csi-ngxstorage-operation-lock-050
+  - iscsi-csi-ngxstorage-operation-lock-051
+  - iscsi-csi-ngxstorage-operation-lock-052
+  - iscsi-csi-ngxstorage-operation-lock-053
+  - iscsi-csi-ngxstorage-operation-lock-054
+  - iscsi-csi-ngxstorage-operation-lock-055
+  - iscsi-csi-ngxstorage-operation-lock-056
+  - iscsi-csi-ngxstorage-operation-lock-057
+  - iscsi-csi-ngxstorage-operation-lock-058
+  - iscsi-csi-ngxstorage-operation-lock-059
+  - iscsi-csi-ngxstorage-operation-lock-060
+  - iscsi-csi-ngxstorage-operation-lock-061
+  - iscsi-csi-ngxstorage-operation-lock-062
+  - iscsi-csi-ngxstorage-operation-lock-063
+  - iscsi-csi-ngxstorage-operation-lock-064
+  - iscsi-csi-ngxstorage-operation-lock-065
+  - iscsi-csi-ngxstorage-operation-lock-066
+  - iscsi-csi-ngxstorage-operation-lock-067
+  - iscsi-csi-ngxstorage-operation-lock-068
+  - iscsi-csi-ngxstorage-operation-lock-069
+  - iscsi-csi-ngxstorage-operation-lock-070
+  - iscsi-csi-ngxstorage-operation-lock-071
+  - iscsi-csi-ngxstorage-operation-lock-072
+  - iscsi-csi-ngxstorage-operation-lock-073
+  - iscsi-csi-ngxstorage-operation-lock-074
+  - iscsi-csi-ngxstorage-operation-lock-075
+  - iscsi-csi-ngxstorage-operation-lock-076
+  - iscsi-csi-ngxstorage-operation-lock-077
+  - iscsi-csi-ngxstorage-operation-lock-078
+  - iscsi-csi-ngxstorage-operation-lock-079
+  - iscsi-csi-ngxstorage-operation-lock-080
+  - iscsi-csi-ngxstorage-operation-lock-081
+  - iscsi-csi-ngxstorage-operation-lock-082
+  - iscsi-csi-ngxstorage-operation-lock-083
+  - iscsi-csi-ngxstorage-operation-lock-084
+  - iscsi-csi-ngxstorage-operation-lock-085
+  - iscsi-csi-ngxstorage-operation-lock-086
+  - iscsi-csi-ngxstorage-operation-lock-087
+  - iscsi-csi-ngxstorage-operation-lock-088
+  - iscsi-csi-ngxstorage-operation-lock-089
+  - iscsi-csi-ngxstorage-operation-lock-090
+  - iscsi-csi-ngxstorage-operation-lock-091
+  - iscsi-csi-ngxstorage-operation-lock-092
+  - iscsi-csi-ngxstorage-operation-lock-093
+  - iscsi-csi-ngxstorage-operation-lock-094
+  - iscsi-csi-ngxstorage-operation-lock-095
+  - iscsi-csi-ngxstorage-operation-lock-096
+  - iscsi-csi-ngxstorage-operation-lock-097
+  - iscsi-csi-ngxstorage-operation-lock-098
+  - iscsi-csi-ngxstorage-operation-lock-099
+  - iscsi-csi-ngxstorage-operation-lock-100
+  - iscsi-csi-ngxstorage-operation-lock-101
+  - iscsi-csi-ngxstorage-operation-lock-102
+  - iscsi-csi-ngxstorage-operation-lock-103
+  - iscsi-csi-ngxstorage-operation-lock-104
+  - iscsi-csi-ngxstorage-operation-lock-105
+  - iscsi-csi-ngxstorage-operation-lock-106
+  - iscsi-csi-ngxstorage-operation-lock-107
+  - iscsi-csi-ngxstorage-operation-lock-108
+  - iscsi-csi-ngxstorage-operation-lock-109
+  - iscsi-csi-ngxstorage-operation-lock-110
+  - iscsi-csi-ngxstorage-operation-lock-111
+  - iscsi-csi-ngxstorage-operation-lock-112
+  - iscsi-csi-ngxstorage-operation-lock-113
+  - iscsi-csi-ngxstorage-operation-lock-114
+  - iscsi-csi-ngxstorage-operation-lock-115
+  - iscsi-csi-ngxstorage-operation-lock-116
+  - iscsi-csi-ngxstorage-operation-lock-117
+  - iscsi-csi-ngxstorage-operation-lock-118
+  - iscsi-csi-ngxstorage-operation-lock-119
+  - iscsi-csi-ngxstorage-operation-lock-120
+  - iscsi-csi-ngxstorage-operation-lock-121
+  - iscsi-csi-ngxstorage-operation-lock-122
+  - iscsi-csi-ngxstorage-operation-lock-123
+  - iscsi-csi-ngxstorage-operation-lock-124
+  - iscsi-csi-ngxstorage-operation-lock-125
+  - iscsi-csi-ngxstorage-operation-lock-126
+  - iscsi-csi-ngxstorage-operation-lock-127
+  resources:
+  - leases
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iscsi-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-iscsi
+rules:
+- apiGroups:
+  - security.openshift.io
+  resourceNames:
+  - iscsi-csi-ngxstorage-node-scc
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: iscsi-csi-ngxstorage-controller
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - persistentvolumeclaims/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - ''
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ''
+  resources:
+  - events
+  verbs:
+  - list
+  - watch
+  - create
+  - update
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - csinodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments/status
+  verbs:
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotclasses
+  - volumesnapshots
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - snapshot.storage.k8s.io
+  resources:
+  - volumesnapshotcontents/status
+  verbs:
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-controller-operation-lock
+  namespace: ngxstorage-iscsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: iscsi-csi-ngxstorage-controller-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-controller
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-leader-election
+  namespace: ngxstorage-iscsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: iscsi-csi-ngxstorage-leader-election
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-controller
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-node-holder-pod-read
+  namespace: ngxstorage-iscsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: iscsi-csi-ngxstorage-node-holder-pod-read
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-node
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-node-operation-lock
+  namespace: ngxstorage-iscsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: iscsi-csi-ngxstorage-node-operation-lock
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-node
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-node-scc-use
+  namespace: ngxstorage-iscsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: iscsi-csi-ngxstorage-node-scc-use
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-node
+  namespace: ngxstorage-iscsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: iscsi-csi-ngxstorage-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: iscsi-csi-ngxstorage-controller
+subjects:
+- kind: ServiceAccount
+  name: iscsi-csi-ngxstorage-controller
+  namespace: ngxstorage-iscsi
+---
+apiVersion: v1
+data:
+  lease-prefix: iscsi-csi-ngxstorage
+  shard-count: '128'
+immutable: true
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: coordination-config
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-coordination-config
+  namespace: ngxstorage-iscsi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: controller-health
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-controller-health
+  namespace: ngxstorage-iscsi
+spec:
+  ports:
+  - name: healthz
+    port: 9808
+    targetPort: 9808
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-controller
+  namespace: ngxstorage-iscsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/name: iscsi-csi-ngxstorage
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/name: iscsi-csi-ngxstorage
+    spec:
+      containers:
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-provisioner@sha256:a4b0b1a37605b7b04a293e136edf7006ec1786a8eb3f4e5a945f81d667dcc371
+        imagePullPolicy: Always
+        name: external-provisioner
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-attacher@sha256:b9dc9a714a484ccdeeb6f86d88d4db9b7a5ecfc5a55da6db3a60bb3fa33c278a
+        imagePullPolicy: Always
+        name: external-attacher
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-resizer@sha256:ea1d25e23479000c7e8eeb92d827df66258df4e482ca054c5e7ce3fc0f5c41a5
+        imagePullPolicy: Always
+        name: external-resizer
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --leader-election
+        - --leader-election-namespace=$(POD_NAMESPACE)
+        - --timeout=300s
+        - --v=2
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: quay.io/ngxstorage/csi-sidecars/csi-snapshotter@sha256:42af0929bcd60a43499825c078a60ff0534e08af8fbeb283aa391be40feb9f3e
+        imagePullPolicy: Always
+        name: external-snapshotter
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9808
+        image: quay.io/ngxstorage/csi-sidecars/livenessprobe@sha256:06da0d5b8908072f2e4522692aee8dc119fba7247a9658497e1153992cd777e9
+        imagePullPolicy: Always
+        name: liveness-probe
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --role=controller
+        - --endpoint=$(CSI_ENDPOINT)
+        - --ip=$(STORAGE_IPS)
+        - --pool-name=$(STORAGE_POOL_NAME)
+        - --portal-group=$(PORTAL_GROUP)
+        - --api-key=$(STORAGE_API_KEY)
+        - --log=info
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///csi/csi.sock
+        - name: NGX_COORDINATION_LEASE_PREFIX
+          value: iscsi-csi-ngxstorage
+        - name: NGX_COORDINATION_SHARD_COUNT
+          value: '128'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: STORAGE_IPS
+          valueFrom:
+            secretKeyRef:
+              key: storage-ips
+              name: iscsi-csi-ngxstorage-config
+        - name: STORAGE_POOL_NAME
+          valueFrom:
+            secretKeyRef:
+              key: pool-name
+              name: iscsi-csi-ngxstorage-config
+        - name: PORTAL_GROUP
+          valueFrom:
+            secretKeyRef:
+              key: portal-group
+              name: iscsi-csi-ngxstorage-config
+        - name: STORAGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: iscsi-csi-ngxstorage-config
+        image: quay.io/ngxstorage/iscsi-csi-ngxstorage@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        imagePullPolicy: Always
+        name: iscsi-csi-ngxstorage
+        ports:
+        - containerPort: 9808
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      serviceAccountName: iscsi-csi-ngxstorage-controller
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      - key: CriticalAddonsOnly
+        operator: Exists
+      volumes:
+      - emptyDir: {}
+        name: socket-dir
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app.kubernetes.io/component: node
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-node
+  namespace: ngxstorage-iscsi
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: node
+      app.kubernetes.io/name: iscsi-csi-ngxstorage
+  template:
+    metadata:
+      annotations:
+        openshift.io/required-scc: iscsi-csi-ngxstorage-node-scc
+      labels:
+        app.kubernetes.io/component: node
+        app.kubernetes.io/name: iscsi-csi-ngxstorage
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/iscsi.csi.ngxstorage.com/csi.sock
+        - --v=2
+        image: quay.io/ngxstorage/csi-sidecars/csi-node-driver-registrar@sha256:f9de845b170155199f2a2a3f9531cf13d78e31235e9db6b6582a8b0db0a50dad
+        imagePullPolicy: Always
+        name: node-driver-registrar
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9812
+        image: quay.io/ngxstorage/csi-sidecars/livenessprobe@sha256:06da0d5b8908072f2e4522692aee8dc119fba7247a9658497e1153992cd777e9
+        imagePullPolicy: Always
+        name: liveness-probe
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      - args:
+        - --role=node
+        - --endpoint=$(CSI_ENDPOINT)
+        - --ip=$(STORAGE_IPS)
+        - --pool-name=$(STORAGE_POOL_NAME)
+        - --portal-group=$(PORTAL_GROUP)
+        - --api-key=$(STORAGE_API_KEY)
+        - --nodeid=$(KUBE_NODE_NAME)
+        - --log=info
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///csi/csi.sock
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NGX_COORDINATION_LEASE_PREFIX
+          value: iscsi-csi-ngxstorage
+        - name: NGX_COORDINATION_SHARD_COUNT
+          value: '128'
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: STORAGE_IPS
+          valueFrom:
+            secretKeyRef:
+              key: storage-ips
+              name: iscsi-csi-ngxstorage-config
+        - name: STORAGE_POOL_NAME
+          valueFrom:
+            secretKeyRef:
+              key: pool-name
+              name: iscsi-csi-ngxstorage-config
+        - name: PORTAL_GROUP
+          valueFrom:
+            secretKeyRef:
+              key: portal-group
+              name: iscsi-csi-ngxstorage-config
+        - name: STORAGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: iscsi-csi-ngxstorage-config
+        - name: NGXSTORAGE_CSI_LOG_DIR
+          value: /host/var/log/ngxstorage/iscsi
+        image: quay.io/ngxstorage/iscsi-csi-ngxstorage@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /healthz
+            port: 9812
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        name: iscsi-csi-ngxstorage
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+            - SYS_CHROOT
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+        - mountPath: /registration
+          name: registration-dir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-ngxstorage
+          readOnly: true
+        - mountPath: /var/lib/kubelet
+          mountPropagation: Bidirectional
+          name: kubelet-dir
+        - mountPath: /host
+          mountPropagation: Bidirectional
+          name: host-root
+        - mountPath: /dev
+          name: host-dev
+      hostIPC: true
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+        node-role.kubernetes.io/worker: ''
+      priorityClassName: system-node-critical
+      serviceAccountName: iscsi-csi-ngxstorage-node
+      tolerations:
+      - operator: Exists
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins/iscsi.csi.ngxstorage.com
+          type: DirectoryOrCreate
+        name: socket-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: Directory
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+        name: kubelet-dir
+      - hostPath:
+          path: /
+          type: Directory
+        name: host-root
+      - hostPath:
+          path: /dev
+          type: Directory
+        name: host-dev
+      - name: kube-api-access-ngxstorage
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3600
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-000
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-001
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-002
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-003
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-004
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-005
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-006
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-007
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-008
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-009
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-010
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-011
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-012
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-013
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-014
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-015
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-016
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-017
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-018
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-019
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-020
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-021
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-022
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-023
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-024
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-025
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-026
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-027
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-028
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-029
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-030
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-031
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-032
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-033
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-034
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-035
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-036
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-037
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-038
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-039
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-040
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-041
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-042
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-043
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-044
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-045
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-046
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-047
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-048
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-049
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-050
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-051
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-052
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-053
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-054
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-055
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-056
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-057
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-058
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-059
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-060
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-061
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-062
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-063
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-064
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-065
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-066
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-067
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-068
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-069
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-070
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-071
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-072
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-073
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-074
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-075
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-076
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-077
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-078
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-079
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-080
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-081
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-082
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-083
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-084
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-085
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-086
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-087
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-088
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-089
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-090
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-091
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-092
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-093
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-094
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-095
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-096
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-097
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-098
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-099
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-100
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-101
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-102
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-103
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-104
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-105
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-106
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-107
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-108
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-109
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-110
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-111
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-112
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-113
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-114
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-115
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-116
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-117
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-118
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-119
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-120
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-121
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-122
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-123
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-124
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-125
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-126
+  namespace: ngxstorage-iscsi
+---
+apiVersion: coordination.k8s.io/v1
+kind: Lease
+metadata:
+  labels:
+    app.kubernetes.io/component: operation-lock
+    app.kubernetes.io/name: iscsi-csi-ngxstorage
+  name: iscsi-csi-ngxstorage-operation-lock-127
+  namespace: ngxstorage-iscsi
+---
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- SYS_ADMIN
+- SYS_CHROOT
+apiVersion: security.openshift.io/v1
+fsGroup:
+  type: RunAsAny
+groups: []
+kind: SecurityContextConstraints
+metadata:
+  name: iscsi-csi-ngxstorage-node-scc
+  namespace: ngxstorage-iscsi
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+users: []
+volumes:
+- hostPath
+- downwardAPI
+- projected
+- emptyDir
+---
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: iscsi.csi.ngxstorage.com
+spec:
+  attachRequired: true
+  fsGroupPolicy: File
+  podInfoOnMount: false
+  volumeLifecycleModes:
+  - Persistent

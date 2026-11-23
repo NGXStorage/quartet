@@ -1,0 +1,24 @@
+# Profile-selected install entrypoint — OPENSHIFT, NFS (PROFILE=nfs).
+#
+# config/default-ocp is the profile-neutral base (no operand set). This
+# composition is the single OCP artifact for a SELECTED NFS install: same
+# parents as config/default-ocp, but the operand install set comes from
+# the nfs ocp entrypoint (../operands/nfs/ocp — the superset that adds the
+# node SCC use grant). Applying an NFS-set artifact and this one is the
+# explicit multi-profile path; the compositions never mix platforms
+# (k8s entrypoints select rbac.yaml, ocp entrypoints select
+# rbac-ocp.yaml). Pinned by hack/rendertest (config-render parity) and
+# tests/install-artifacts-test.sh (per-profile composition).
+#
+# go run sigs.k8s.io/kustomize/kustomize/v5@v5.7.1 build config/default-nfs-ocp
+#
+# The manager namespace lives here as its own copy (kustomize v5 locality
+# forbids referencing a FILE outside this directory; each entrypoint keeps
+# its own copy). All copies must stay byte-identical — checked by
+# rendertest (config-render parity).
+resources:
+- namespace.yaml
+- ../crd
+- ../rbac
+- ../manager
+- ../operands/nfs/ocp

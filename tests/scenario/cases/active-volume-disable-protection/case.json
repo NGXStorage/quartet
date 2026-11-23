@@ -1,0 +1,9 @@
+{
+  "name": "active-volume-disable-protection",
+  "platform": "kubernetes",
+  "profile": "nfs",
+  "risk": "cluster-scoped-fault",
+  "scope": "cluster-scoped",
+  "precondition": "Live singleton Quartet CR 'quartet' with an enabled nfs profile converging on the target; labeled TEST PVC/PV/VolumeAttachment + marker seeded by the case itself in TEST_NAMESPACE; target context and namespace explicitly granted (no silent default). AFFECTS THE TARGET: the mutation patches the cluster-scoped singleton CR and the usage gate scans PVC/PV/VolumeAttachment cluster-wide by driver identity (internal/controller/apply.go:1132-1203) — an isolated TEST_NAMESPACE does NOT make this safe on the live singleton. Offline cells run against a fake store under $HOME/.cache/ngxstorage; the live cell stays NOT RUN (serial live worker only).",
+  "plan_ref": "offline scenario contract — active-volume-disable-protection"
+}

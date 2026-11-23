@@ -1,0 +1,18 @@
+# OpenShift iSCSI operand install entrypoint (explicit namespace contract). Apply
+# with `make install-operands PLATFORM=ocp PROFILE=iscsi` or
+# `kubectl apply -k config/operands/iscsi/ocp`. Deterministic order
+# (kustomize renders resources in listed order and kubectl applies the
+# render sequentially): namespace → RBAC (the ocp superset adds the node
+# SCC use grant). The manager composition for this selection
+# (config/default-iscsi-ocp, or the full-artifact path
+# `make install-artifacts PLATFORM=ocp PROFILE=iscsi`) is applied as a
+# separate step.
+#
+# Files here are GENERATED (hack/generate-install-rbac); do not hand-edit.
+# kustomize v5's locality constraint forbids referencing files outside this
+# directory, so the overlay carries its own copies (parity-pinned against
+# the renderer by internal/renderer TestInstallRBACParity /
+# TestInstallNamespaceParity).
+resources:
+- namespace.yaml
+- rbac-ocp.yaml

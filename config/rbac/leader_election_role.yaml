@@ -1,0 +1,30 @@
+# Role used by the controller manager leader election (coordination lease).
+# Namespace-scoped: the lease lives in QUARTET_NAMESPACE (leader election).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: quartet-leader-election-role
+ # explicit placement: the lease lives in quartet-system; matches QUARTET_NAMESPACE wiring in
+ # cmd/manager/main.go (explicit, not transformer-derived — see
+ # service_account.yaml comment).
+  namespace: quartet-system
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch

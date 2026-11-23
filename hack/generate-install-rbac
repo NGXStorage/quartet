@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# generate-install-rbac (out-of-band RBAC contract): regenerate the commit-resident
+# operand RBAC install manifests — one entrypoint pair per RENDERED profile,
+# config/operands/<profile>/{k8s/rbac.yaml,ocp/rbac-ocp.yaml} plus
+# <profile>/{k8s,ocp}/namespace.yaml — from the renderer's InstallRBAC()
+# set (hack/install-rbac). A profile without a renderer (renderer.For
+# returns nil) generates nothing: no placeholder manifests (no placeholder install surface).
+#
+# The quartet manager holds read-only RBAC (get;list;watch on the four
+# rbac.authorization.k8s.io kinds); the INSTALLER applies this set out-of-
+# band and the reconciler verifies it at reconcile start (RBACDrift gate).
+# Regenerate after ANY renderer change that touches the RBAC object set; the
+# golden parity test (internal/renderer) fails on drift, and this script is
+# idempotent — a second run changes nothing.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+# Machine policy: scratch/build artifacts under $HOME/.cache/opencode/tmp;
+# /tmp and /var/tmp are never used.
+export TMPDIR="${TMPDIR:-$HOME/.cache/opencode/tmp}"
+export GOCACHE="${GOCACHE:-$TMPDIR/gocache}"
+
+go run ./hack/install-rbac
+echo "generate-install-rbac: PASS (config/operands/<profile>/ regenerated for every rendered profile; verify with git status)"

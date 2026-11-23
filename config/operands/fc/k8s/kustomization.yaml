@@ -1,0 +1,17 @@
+# Kubernetes FC operand install entrypoint (explicit namespace contract). Apply with
+# `make install-operands PLATFORM=k8s PROFILE=fc` or
+# `kubectl apply -k config/operands/fc/k8s`. Deterministic order (kustomize
+# renders resources in listed order and kubectl applies the render
+# sequentially): namespace → RBAC. The manager composition for this
+# selection (config/default-fc, or the full-artifact path
+# `make install-artifacts PLATFORM=k8s PROFILE=fc`) is applied as a
+# separate step.
+#
+# Files here are GENERATED (hack/generate-install-rbac); do not hand-edit.
+# kustomize v5's locality constraint forbids referencing files outside this
+# directory, so the overlay carries its own copies (parity-pinned against
+# the renderer by internal/renderer TestInstallRBACParity /
+# TestInstallNamespaceParity).
+resources:
+- namespace.yaml
+- rbac.yaml
